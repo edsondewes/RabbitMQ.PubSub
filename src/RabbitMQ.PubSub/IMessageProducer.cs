@@ -5,6 +5,7 @@ namespace RabbitMQ.PubSub
 {
     public interface IMessageProducer : IDisposable
     {
+        Task Complete();
         Task Publish<T>(T obj, string routingKey = null, string exchange = null);
     }
 }

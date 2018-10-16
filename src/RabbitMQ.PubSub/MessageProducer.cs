@@ -43,9 +43,14 @@ namespace RabbitMQ.PubSub
             _publishBlock = new ActionBlock<PublishCommand>(publishAction, blockOptions);
         }
 
-        public void Dispose()
+        public Task Complete()
         {
             _publishBlock.Complete();
+            return _publishBlock.Completion;
+        }
+
+        public void Dispose()
+        {
             _model.Dispose();
             _connection.Dispose();
         }

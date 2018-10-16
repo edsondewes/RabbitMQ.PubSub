@@ -1,10 +1,11 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 
 namespace RabbitMQ.PubSub.HostedServices
 {
-    public class BackgroundConsumerService<TObj, TService> : IHostedService
+    public class BackgroundConsumerService<TObj, TService> : IHostedService, IDisposable
         where TService : IBackgroundConsumer<TObj>
     {
         private readonly IMessageConsumer _consumer;
@@ -17,7 +18,7 @@ namespace RabbitMQ.PubSub.HostedServices
             _consumer = consumer;
             _service = service;
         }
-       
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _subscription = _consumer.Subscribe<TObj>(
@@ -33,8 +34,12 @@ namespace RabbitMQ.PubSub.HostedServices
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            return _subscription.Complete();
+        }
+
+        public void Dispose()
+        {
             _subscription.Dispose();
-            return Task.CompletedTask;
         }
     }
 }

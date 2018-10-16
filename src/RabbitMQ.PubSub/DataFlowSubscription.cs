@@ -9,27 +9,35 @@ namespace RabbitMQ.PubSub
 {
     public class DataFlowSubscription<T> : IMessageSubscription
     {
-        private readonly ITargetBlock<byte[]> _callbackBlock;
         private readonly string _consumerTag;
         private readonly IModel _model;
+
+        private readonly ITargetBlock<T> _callbackBlock;
+        private readonly ITargetBlock<byte[]> _serializeBlock;
 
         public DataFlowSubscription(IModel model, string queueName, Func<T, Task> callback, int maxDegreeOfParallelism)
         {
             var consumer = new EventingBasicConsumer(model);
             _consumerTag = model.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
-            consumer.Received += (_, eventArgs) => _callbackBlock.Post(eventArgs.Body);
+            consumer.Received += (_, eventArgs) => _serializeBlock.Post(eventArgs.Body);
 
-            _callbackBlock = CreateFlow(callback, maxDegreeOfParallelism);
+            (_serializeBlock, _callbackBlock) = CreateFlow(callback, maxDegreeOfParallelism);
             _model = model;
+        }
+
+        public Task Complete()
+        {
+            _serializeBlock.Complete();
+            return _callbackBlock.Completion;
         }
 
         public void Dispose()
         {
             _model.BasicCancel(_consumerTag);
-            _callbackBlock.Complete();
         }
 
-        private static ITargetBlock<byte[]> CreateFlow(Func<T, Task> callback, int maxDegreeOfParallelism)
+        private static (ITargetBlock<byte[]> serializeBlock, ITargetBlock<T> callbackBlock)
+            CreateFlow(Func<T, Task> callback, int maxDegreeOfParallelism)
         {
             var executionOptions = new ExecutionDataflowBlockOptions
             {
@@ -46,7 +54,8 @@ namespace RabbitMQ.PubSub
             };
 
             serializeBlock.LinkTo(callbackBlock, flowOptions);
-            return serializeBlock;
+
+            return (serializeBlock, callbackBlock);
         }
     }
 }
