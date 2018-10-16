@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using MessagePack;
@@ -15,7 +17,7 @@ namespace RabbitMQ.PubSub
         private readonly IConnection _connection;
         private readonly IModel _model;
 
-        private readonly ActionBlock<PublishCommand> _publishBlock;
+        private readonly ActionBlock<PublishCommand[]> _publishBlock;
 
         public MessageProducer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory)
         {
@@ -31,16 +33,22 @@ namespace RabbitMQ.PubSub
                 SingleProducerConstrained = true
             };
 
-            Action<PublishCommand> publishAction = (command) =>
+            Action<PublishCommand[]> publishAction = (commands) =>
             {
-                _model.BasicPublish(
-                    exchange: command.Exchange,
-                    routingKey: command.RoutingKey,
-                    basicProperties: command.Properties,
-                    body: command.Body);
+                switch (commands.Length)
+                {
+                    case 0:
+                        return;
+                    case 1:
+                        SendSingle(commands[0]);
+                        return;
+                    default:
+                        SendBatch(commands);
+                        return;
+                }
             };
 
-            _publishBlock = new ActionBlock<PublishCommand>(publishAction, blockOptions);
+            _publishBlock = new ActionBlock<PublishCommand[]>(publishAction, blockOptions);
         }
 
         public Task Complete()
@@ -57,13 +65,54 @@ namespace RabbitMQ.PubSub
 
         public Task Publish<T>(T obj, string routingKey = null, string exchange = null)
         {
-            return _publishBlock.SendAsync(new PublishCommand
+            return _publishBlock.SendAsync(new[] {
+                new PublishCommand
+                {
+                    Body = MessagePackSerializer.Serialize(obj),
+                    Exchange = exchange ?? _config.DefaultExchange,
+                    Properties = _defaultProperties,
+                    RoutingKey = routingKey ?? string.Empty
+                }
+            });
+        }
+
+        public Task Publish<T>(IEnumerable<T> obj, string routingKey = null, string exchange = null)
+        {
+            var commands = obj.Select(c => new PublishCommand
             {
-                Body = MessagePackSerializer.Serialize(obj),
+                Body = MessagePackSerializer.Serialize(c),
                 Exchange = exchange ?? _config.DefaultExchange,
                 Properties = _defaultProperties,
                 RoutingKey = routingKey ?? string.Empty
-            });
+            }).ToArray();
+
+            return _publishBlock.SendAsync(commands);
+        }
+
+        private void SendSingle(PublishCommand command)
+        {
+            _model.BasicPublish(
+                basicProperties: command.Properties,
+                body: command.Body,
+                exchange: command.Exchange,
+                routingKey: command.RoutingKey
+                );
+        }
+
+        private void SendBatch(PublishCommand[] commands)
+        {
+            var batch = _model.CreateBasicPublishBatch();
+            foreach (var command in commands)
+            {
+                batch.Add(exchange: command.Exchange,
+                    body: command.Body,
+                    mandatory: false,
+                    properties: command.Properties,
+                    routingKey: command.RoutingKey
+                    );
+            }
+
+            batch.Publish();
         }
     }
 }

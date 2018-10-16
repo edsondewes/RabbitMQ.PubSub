@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RabbitMQ.PubSub
@@ -7,5 +8,6 @@ namespace RabbitMQ.PubSub
     {
         Task Complete();
         Task Publish<T>(T obj, string routingKey = null, string exchange = null);
+        Task Publish<T>(IEnumerable<T> obj, string routingKey = null, string exchange = null);
     }
 }
