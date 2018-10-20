@@ -32,7 +32,7 @@ namespace ConsoleApp
                 services.Configure<ConfigRabbitMQ>(hostContext.Configuration.GetSection("RabbitMQ"));
                 services.AddRabbitPubSub();
 
-                services.AddRabbitConsumer<SomeData, DataLoggerConsumer>();
+                services.AddActionFlowConsumer<SomeData, DataLoggerConsumer>();
                 services.AddHostedService<RandomDataProducer>();
             })
             .ConfigureLogging(logging =>

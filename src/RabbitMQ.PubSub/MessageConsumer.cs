@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace RabbitMQ.PubSub
 {
@@ -25,18 +25,32 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public IMessageSubscription Subscribe<T>(
-            IEnumerable<string> routingKeys,
-            Func<T, Task> callback,
-            string exchange = null,
-            string queue = null,
-            int maxDegreeOfParallelism = 1)
+        public ISubscription Subscribe(Action<byte[]> callback, SubscriptionOptions options = null)
         {
-            if (exchange == null)
-                exchange = _config.DefaultExchange;
+            var exchange = options?.Exchange ?? _config.DefaultExchange;
 
             EnsureExchangeCreated(exchange);
+            var queueName = EnsureQueueCreated(options?.RoutingKeys, exchange, options?.Queue);
 
+            var consumer = new EventingBasicConsumer(_model);
+            var consumerTag = _model.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
+            consumer.Received += (_, eventArgs) => callback(eventArgs.Body);
+
+            return new BasicSubscription(_model, consumerTag);
+        }
+
+        public ISubscription Subscribe(IConsumerStrategy strategy, SubscriptionOptions options = null)
+        {
+            return Subscribe(strategy.Consume, options);
+        }
+
+        private void EnsureExchangeCreated(string name)
+        {
+            _model.ExchangeDeclare(name, ExchangeType.Topic, durable: true, autoDelete: false);
+        }
+
+        private string EnsureQueueCreated(IEnumerable<string> routingKeys, string exchange, string queue)
+        {
             var queueName = _model.QueueDeclare(
                 queue: queue ?? string.Empty,
                 autoDelete: !_config.DurableQueues || string.IsNullOrEmpty(queue),
@@ -51,12 +65,7 @@ namespace RabbitMQ.PubSub
                     routingKey: routingKey);
             }
 
-            return new DataFlowSubscription<T>(_model, queueName, callback, maxDegreeOfParallelism);
-        }
-
-        private void EnsureExchangeCreated(string name)
-        {
-            _model.ExchangeDeclare(name, ExchangeType.Topic, durable: true, autoDelete: false);
+            return queueName;
         }
     }
 }

@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace RabbitMQ.PubSub
 {
     public interface IMessageConsumer : IDisposable
     {
-        IMessageSubscription Subscribe<T>(
-            IEnumerable<string> routingKeys,
-            Func<T, Task> callback,
-            string exchange = null,
-            string queue = null,
-            int maxDegreeOfParallelism = 1);
+        ISubscription Subscribe(Action<byte[]> callback, SubscriptionOptions options = null);
+        ISubscription Subscribe(IConsumerStrategy strategy, SubscriptionOptions options = null);
     }
 }
