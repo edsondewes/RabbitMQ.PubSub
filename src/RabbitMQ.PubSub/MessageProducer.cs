@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using MessagePack;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
@@ -11,22 +10,18 @@ namespace RabbitMQ.PubSub
 {
     public class MessageProducer : IMessageProducer
     {
-        private readonly ConfigRabbitMQ _config;
-        private readonly IBasicProperties _defaultProperties;
-
         private readonly IConnection _connection;
+        private readonly ConfigRabbitMQ _config;
         private readonly IModel _model;
-
         private readonly ActionBlock<PublishCommand[]> _publishBlock;
+        private readonly ISerializationManager _serialization;
 
-        public MessageProducer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory)
+        public MessageProducer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory, ISerializationManager serialization)
         {
             _config = config.Value;
             _connection = connectionFactory.TryCreateConnection(_config.Host);
             _model = _connection.CreateModel();
-
-            _defaultProperties = _model.CreateBasicProperties();
-            _defaultProperties.Persistent = _config.PersistentDelivery;
+            _serialization = serialization;
 
             var blockOptions = new ExecutionDataflowBlockOptions
             {
@@ -63,26 +58,23 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public Task Publish<T>(T obj, string routingKey = null, string exchange = null)
+        public Task Publish<T>(T obj, string routingKey = null, string exchange = null, string mimeType = null)
         {
-            return _publishBlock.SendAsync(new[] {
-                new PublishCommand
-                {
-                    Body = MessagePackSerializer.Serialize(obj),
-                    Exchange = exchange ?? _config.DefaultExchange,
-                    Properties = _defaultProperties,
-                    RoutingKey = routingKey ?? string.Empty
-                }
-            });
+            return Publish<T>(new[] { obj }, routingKey, exchange, mimeType);
         }
 
-        public Task Publish<T>(IEnumerable<T> obj, string routingKey = null, string exchange = null)
+        public Task Publish<T>(IEnumerable<T> obj, string routingKey = null, string exchange = null, string mimeType = null)
         {
-            var commands = obj.Select(c => new PublishCommand
+            var serializer = _serialization.GetSerializer(mimeType);
+            var properties = _model.CreateBasicProperties();
+            properties.Persistent = _config.PersistentDelivery;
+            properties.ContentType = serializer.MimeType;
+
+            var commands = obj.Select(message => new PublishCommand
             {
-                Body = MessagePackSerializer.Serialize(c),
+                Body = serializer.Serialize(message),
                 Exchange = exchange ?? _config.DefaultExchange,
-                Properties = _defaultProperties,
+                Properties = properties,
                 RoutingKey = routingKey ?? string.Empty
             }).ToArray();
 

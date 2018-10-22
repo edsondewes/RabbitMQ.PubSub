@@ -1,7 +1,7 @@
-﻿using MessagePack;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
 using RabbitMQ.PubSub;
 using RabbitMQ.PubSub.HostedServices;
+using RabbitMQ.PubSub.Serializers;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -14,11 +14,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>The original Microsoft.Extensions.DependencyInjection.IServiceCollection.</returns>
         public static IServiceCollection AddRabbitPubSub(this IServiceCollection services)
         {
-            MessagePackSerializer.SetDefaultResolver(MessagePack.Resolvers.ContractlessStandardResolver.Instance);
+            MessagePack.MessagePackSerializer.SetDefaultResolver(MessagePack.Resolvers.ContractlessStandardResolver.Instance);
 
             services.AddSingleton<IConnectionHelper, ConnectionHelper>();
             services.AddSingleton<IMessageConsumer, MessageConsumer>();
             services.AddSingleton<IMessageProducer, MessageProducer>();
+            services.AddSingleton<ISerializationManager, SerializationManagerImpl>();
+            services.AddSingleton<ISerializer, MessagePackSerializer>();
 
             return services;
         }

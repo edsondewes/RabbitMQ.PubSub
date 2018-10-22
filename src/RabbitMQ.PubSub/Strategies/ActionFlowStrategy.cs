@@ -2,14 +2,12 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using MessagePack;
 
 namespace RabbitMQ.PubSub.Subscriptions
 {
-    public class ActionFlowStrategy<T> : IConsumerStrategy
+    public class ActionFlowStrategy<T> : IConsumerStrategy<T>
     {
         private readonly ITargetBlock<T> _callbackBlock;
-        private readonly IPropagatorBlock<byte[], T> _serializeBlock;
 
         public ActionFlowStrategy(Func<T, Task> callback, ActionFlowStrategyOptions dataFlowOptions = null)
         {
@@ -20,26 +18,18 @@ namespace RabbitMQ.PubSub.Subscriptions
                 SingleProducerConstrained = true,
             };
 
-            _serializeBlock = new TransformBlock<byte[], T>(body => MessagePackSerializer.Deserialize<T>(body), executionOptions);
             _callbackBlock = new ActionBlock<T>(callback, executionOptions);
-
-            var flowOptions = new DataflowLinkOptions
-            {
-                PropagateCompletion = true,
-            };
-
-            _serializeBlock.LinkTo(_callbackBlock, flowOptions);
         }
 
         public Task Complete()
         {
-            _serializeBlock.Complete();
+            _callbackBlock.Complete();
             return _callbackBlock.Completion;
         }
 
-        public void Consume(byte[] body)
+        public void Consume(T message)
         {
-            _serializeBlock.Post(body);
+            _callbackBlock.Post(message);
         }
     }
 }

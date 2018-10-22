@@ -11,12 +11,14 @@ namespace RabbitMQ.PubSub
         private readonly ConfigRabbitMQ _config;
         private readonly IConnection _connection;
         private readonly IModel _model;
+        private readonly ISerializationManager _serialization;
 
-        public MessageConsumer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory)
+        public MessageConsumer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory, ISerializationManager serialization)
         {
             _config = config.Value;
             _connection = connectionFactory.TryCreateConnection(_config.Host);
             _model = _connection.CreateModel();
+            _serialization = serialization;
         }
 
         public void Dispose()
@@ -25,7 +27,7 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public ISubscription Subscribe(Action<byte[]> callback, SubscriptionOptions options = null)
+        public ISubscription Subscribe<T>(Action<T> callback, SubscriptionOptions options = null)
         {
             var exchange = options?.Exchange ?? _config.DefaultExchange;
 
@@ -34,14 +36,19 @@ namespace RabbitMQ.PubSub
 
             var consumer = new EventingBasicConsumer(_model);
             var consumerTag = _model.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
-            consumer.Received += (_, eventArgs) => callback(eventArgs.Body);
+            consumer.Received += (_, eventArgs) =>
+            {
+                var serializer = _serialization.GetSerializer(eventArgs.BasicProperties.ContentType);
+                var obj = serializer.Deserialize<T>(eventArgs.Body);
+                callback(obj);
+            };
 
-            return new BasicSubscription(_model, consumerTag);
+            return new SubscriptionImpl(_model, consumerTag);
         }
 
-        public ISubscription Subscribe(IConsumerStrategy strategy, SubscriptionOptions options = null)
+        public ISubscription Subscribe<T>(IConsumerStrategy<T> strategy, SubscriptionOptions options = null)
         {
-            return Subscribe(strategy.Consume, options);
+            return Subscribe<T>(strategy.Consume, options);
         }
 
         private void EnsureExchangeCreated(string name)

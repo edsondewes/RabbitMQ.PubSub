@@ -1,7 +1,7 @@
 ﻿namespace RabbitMQ.PubSub
 {
-    public interface IConsumerStrategy
+    public interface IConsumerStrategy<T>
     {
-        void Consume(byte[] body);
+        void Consume(T message);
     }
 }
