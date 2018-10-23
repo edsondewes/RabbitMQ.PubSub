@@ -22,10 +22,7 @@ namespace RabbitMQ.PubSub
             _model = _connection.CreateModel();
             _serialization = serialization;
             
-            _publishBlock = new ActionBlock<PublishCommand[]>(Send, new ExecutionDataflowBlockOptions
-            {
-                SingleProducerConstrained = true
-            });
+            _publishBlock = new ActionBlock<PublishCommand[]>(Send);
         }
 
         public Task Complete()
