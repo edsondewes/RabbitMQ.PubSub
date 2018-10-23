@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -22,28 +21,11 @@ namespace RabbitMQ.PubSub
             _connection = connectionFactory.TryCreateConnection(_config.Host);
             _model = _connection.CreateModel();
             _serialization = serialization;
-
-            var blockOptions = new ExecutionDataflowBlockOptions
+            
+            _publishBlock = new ActionBlock<PublishCommand[]>(Send, new ExecutionDataflowBlockOptions
             {
                 SingleProducerConstrained = true
-            };
-
-            Action<PublishCommand[]> publishAction = (commands) =>
-            {
-                switch (commands.Length)
-                {
-                    case 0:
-                        return;
-                    case 1:
-                        SendSingle(commands[0]);
-                        return;
-                    default:
-                        SendBatch(commands);
-                        return;
-                }
-            };
-
-            _publishBlock = new ActionBlock<PublishCommand[]>(publishAction, blockOptions);
+            });
         }
 
         public Task Complete()
@@ -79,6 +61,21 @@ namespace RabbitMQ.PubSub
             }).ToArray();
 
             return _publishBlock.SendAsync(commands);
+        }
+
+        private void Send(PublishCommand[] commands)
+        {
+            switch (commands.Length)
+            {
+                case 0:
+                    return;
+                case 1:
+                    SendSingle(commands[0]);
+                    return;
+                default:
+                    SendBatch(commands);
+                    return;
+            }
         }
 
         private void SendSingle(PublishCommand command)

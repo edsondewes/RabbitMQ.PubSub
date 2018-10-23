@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
@@ -13,7 +12,7 @@ namespace RabbitMQ.PubSub.Subscriptions
         {
             var executionOptions = new ExecutionDataflowBlockOptions
             {
-                CancellationToken = dataFlowOptions?.CancellationToken ?? default(CancellationToken),
+                CancellationToken = dataFlowOptions?.CancellationToken ?? default,
                 MaxDegreeOfParallelism = dataFlowOptions?.MaxDegreeOfParallelism ?? 1,
                 SingleProducerConstrained = true,
             };
