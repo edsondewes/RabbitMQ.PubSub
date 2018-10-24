@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -10,15 +11,22 @@ namespace RabbitMQ.PubSub
     {
         private readonly ConfigRabbitMQ _config;
         private readonly IConnection _connection;
+        private readonly ILogger<MessageConsumer> _logger;
         private readonly IModel _model;
         private readonly ISerializationManager _serialization;
 
-        public MessageConsumer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory, ISerializationManager serialization)
+        public MessageConsumer(IOptions<ConfigRabbitMQ> config,
+            IConnectionHelper connectionFactory,
+            ISerializationManager serialization,
+            ILogger<MessageConsumer> logger)
         {
             _config = config.Value;
             _connection = connectionFactory.TryCreateConnection(_config.Host);
-            _model = _connection.CreateModel();
             _serialization = serialization;
+            _logger = logger;
+
+            _model = _connection.CreateModel();
+            _model.CallbackException += CallbackException;
         }
 
         public void Dispose()
@@ -49,6 +57,11 @@ namespace RabbitMQ.PubSub
         public ISubscription Subscribe<T>(IConsumerStrategy<T> strategy, SubscriptionOptions options = null)
         {
             return Subscribe<T>(strategy.Consume, options);
+        }
+
+        private void CallbackException(object sender, CallbackExceptionEventArgs e)
+        {
+            _logger.LogError(e.Exception, "A message could not be processed");
         }
 
         private void EnsureExchangeCreated(string name)
