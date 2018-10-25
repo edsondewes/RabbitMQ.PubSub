@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.PubSub;
 using RabbitMQ.PubSub.HostedServices;
 using RabbitMQ.PubSub.Serializers;
@@ -32,12 +35,22 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TObj">Type of the serialized object</typeparam>
         /// <typeparam name="TService">Type of the processing service</typeparam>
         /// <param name="services">The Microsoft.Extensions.DependencyInjection.IServiceCollection to register with.</param>
+        /// <param name="builder">An action to configure the subscription behavior.</param>
         /// <returns>The original Microsoft.Extensions.DependencyInjection.IServiceCollection.</returns>
-        public static IServiceCollection AddActionFlowConsumer<TObj, TService>(this IServiceCollection services)
+        public static IServiceCollection AddActionFlowConsumer<TObj, TService>(this IServiceCollection services, Action<IActionFlowConsumerOptionsBuilder> builder)
             where TService : class, IBackgroundConsumer<TObj>
         {
+            var optionsBuilder = new ActionFlowConsumerOptionsBuilder();
+            builder(optionsBuilder);
+
             services.TryAddSingleton<TService>();
-            services.AddHostedService<ActionFlowConsumerService<TObj, TService>>();
+            services.AddTransient<IHostedService>(provider => new ActionFlowConsumerService<TObj, TService>(
+                provider.GetRequiredService<IMessageConsumer>(),
+                provider.GetRequiredService<TService>(),
+                optionsBuilder.Options,
+                provider.GetRequiredService<ILogger<ActionFlowConsumerService<TObj, TService>>>()
+                )
+            );
 
             return services;
         }

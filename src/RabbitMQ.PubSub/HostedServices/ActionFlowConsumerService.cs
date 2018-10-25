@@ -11,17 +11,24 @@ namespace RabbitMQ.PubSub.HostedServices
         where TService : IBackgroundConsumer<TObj>
     {
         private readonly IMessageConsumer _consumer;
-        private readonly TService _service;
         private readonly ILogger<ActionFlowConsumerService<TObj, TService>> _logger;
+        private readonly ActionFlowConsumerOptions _options;
+        private readonly TService _service;
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
         private ActionBlock<TObj> _actionBlock;
         private ISubscription _subscription;
 
-        public ActionFlowConsumerService(IMessageConsumer consumer, TService service, ILogger<ActionFlowConsumerService<TObj, TService>> logger)
+        public ActionFlowConsumerService(
+            IMessageConsumer consumer,
+            TService service,
+            ActionFlowConsumerOptions options,
+            ILogger<ActionFlowConsumerService<TObj, TService>> logger
+            )
         {
             _consumer = consumer;
             _service = service;
+            _options = options;
             _logger = logger;
         }
 
@@ -30,15 +37,15 @@ namespace RabbitMQ.PubSub.HostedServices
             _actionBlock = new ActionBlock<TObj>(_service.Consume, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = _stoppingCts.Token,
-                MaxDegreeOfParallelism = _service.MaxDegreeOfParallelism,
+                MaxDegreeOfParallelism = _options.MaxDegreeOfParallelism,
                 SingleProducerConstrained = true,
             });
 
             _subscription = _consumer.Subscribe<TObj>(PostMessage, new SubscriptionOptions
             {
-                Exchange = _service.Exchange,
-                Queue = _service.QueueName,
-                RoutingKeys = _service.RoutingKeys,
+                Exchange = _options.Exchange,
+                Queue = _options.QueueName,
+                RoutingKeys = _options.RoutingKeys,
             });
 
             return Task.CompletedTask;

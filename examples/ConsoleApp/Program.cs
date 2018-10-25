@@ -10,7 +10,7 @@ using RabbitMQ.PubSub;
 
 namespace ConsoleApp
 {
-    class Program
+    internal class Program
     {
         public static async Task Main()
         {
@@ -32,7 +32,7 @@ namespace ConsoleApp
                 services.Configure<ConfigRabbitMQ>(hostContext.Configuration.GetSection("RabbitMQ"));
                 services.AddRabbitPubSub();
 
-                services.AddActionFlowConsumer<SomeData, DataLoggerConsumer>();
+                services.AddActionFlowConsumer<SomeData, DataLoggerConsumer>(builder => builder.ForRoutingKeys("test"));
                 services.AddHostedService<RandomDataProducer>();
             })
             .ConfigureLogging(logging =>
