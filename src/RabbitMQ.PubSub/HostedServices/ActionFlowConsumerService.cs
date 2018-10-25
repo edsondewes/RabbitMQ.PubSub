@@ -34,7 +34,7 @@ namespace RabbitMQ.PubSub.HostedServices
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _actionBlock = new ActionBlock<TObj>(_service.Consume, new ExecutionDataflowBlockOptions
+            _actionBlock = new ActionBlock<TObj>(ConsumeWithToken, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = _stoppingCts.Token,
                 MaxDegreeOfParallelism = _options.MaxDegreeOfParallelism,
@@ -70,6 +70,11 @@ namespace RabbitMQ.PubSub.HostedServices
         {
             _subscription.Dispose();
             _stoppingCts.Cancel();
+        }
+
+        private Task ConsumeWithToken(TObj obj)
+        {
+            return _service.Consume(obj, _stoppingCts.Token);
         }
 
         private void PostMessage(TObj message)
