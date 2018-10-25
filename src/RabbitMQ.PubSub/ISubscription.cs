@@ -11,6 +11,7 @@ namespace RabbitMQ.PubSub
     {
         private readonly string _consumerTag;
         private readonly IModel _model;
+        private bool _disposed = false;
 
         public SubscriptionImpl(IModel model, string consumerTag)
         {
@@ -20,7 +21,11 @@ namespace RabbitMQ.PubSub
 
         public void Dispose()
         {
-            _model.BasicCancel(_consumerTag);
+            if (!_disposed)
+            {
+                _model.BasicCancel(_consumerTag);
+                _disposed = true;
+            }
         }
     }
 }

@@ -54,11 +54,6 @@ namespace RabbitMQ.PubSub
             return new SubscriptionImpl(_model, consumerTag);
         }
 
-        public ISubscription Subscribe<T>(IConsumerStrategy<T> strategy, SubscriptionOptions options = null)
-        {
-            return Subscribe<T>(strategy.Consume, options);
-        }
-
         private void CallbackException(object sender, CallbackExceptionEventArgs e)
         {
             _logger.LogError(e.Exception, "A message could not be processed");

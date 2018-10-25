@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Hosting;
-using RabbitMQ.PubSub.Subscriptions;
+using Microsoft.Extensions.Logging;
 
 namespace RabbitMQ.PubSub.HostedServices
 {
@@ -11,30 +12,33 @@ namespace RabbitMQ.PubSub.HostedServices
     {
         private readonly IMessageConsumer _consumer;
         private readonly TService _service;
+        private readonly ILogger<ActionFlowConsumerService<TObj, TService>> _logger;
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
-        private ActionFlowStrategy<TObj> _strategy;
+        private ActionBlock<TObj> _actionBlock;
         private ISubscription _subscription;
 
-        public ActionFlowConsumerService(IMessageConsumer consumer, TService service)
+        public ActionFlowConsumerService(IMessageConsumer consumer, TService service, ILogger<ActionFlowConsumerService<TObj, TService>> logger)
         {
             _consumer = consumer;
             _service = service;
+            _logger = logger;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _strategy = new ActionFlowStrategy<TObj>(_service.Consume, new ActionFlowStrategyOptions
+            _actionBlock = new ActionBlock<TObj>(_service.Consume, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = _stoppingCts.Token,
-                MaxDegreeOfParallelism = _service.MaxDegreeOfParallelism
+                MaxDegreeOfParallelism = _service.MaxDegreeOfParallelism,
+                SingleProducerConstrained = true,
             });
 
-            _subscription = _consumer.Subscribe(_strategy, new SubscriptionOptions
+            _subscription = _consumer.Subscribe<TObj>(PostMessage, new SubscriptionOptions
             {
                 Exchange = _service.Exchange,
                 Queue = _service.QueueName,
-                RoutingKeys = _service.RoutingKeys
+                RoutingKeys = _service.RoutingKeys,
             });
 
             return Task.CompletedTask;
@@ -44,18 +48,30 @@ namespace RabbitMQ.PubSub.HostedServices
         {
             try
             {
+                _subscription.Dispose();
                 _stoppingCts.Cancel();
             }
             finally
             {
-                await Task.WhenAny(_strategy.Complete(), Task.Delay(Timeout.Infinite, cancellationToken));
+                var stoppingTask = await Task.WhenAny(_actionBlock.Completion, Task.Delay(Timeout.Infinite, cancellationToken));
+                if (stoppingTask.IsFaulted)
+                    _logger.LogError(stoppingTask.Exception.InnerException, "An error ocurred when processing a message");
             }
         }
 
         public void Dispose()
         {
-            _stoppingCts.Cancel();
             _subscription.Dispose();
+            _stoppingCts.Cancel();
+        }
+
+        private void PostMessage(TObj message)
+        {
+            var posted = _actionBlock.Post(message);
+            if (!posted)
+            {
+                _logger.LogError("Could not post message: {message}", message);
+            }
         }
     }
 }
