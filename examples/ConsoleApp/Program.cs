@@ -33,6 +33,7 @@ namespace ConsoleApp
                 services.AddRabbitPubSub();
 
                 services.AddActionFlowConsumer<SomeData, DataLoggerConsumer>(builder => builder.ForRoutingKeys("test"));
+
                 services.AddHostedService<RandomDataProducer>();
             })
             .ConfigureLogging(logging =>

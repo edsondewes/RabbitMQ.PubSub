@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -11,18 +13,19 @@ namespace RabbitMQ.PubSub.HostedServices
         where TService : IBackgroundConsumer<TObj>
     {
         private readonly IMessageConsumer _consumer;
-        private readonly ILogger<ActionFlowConsumerService<TObj, TService>> _logger;
-        private readonly ActionFlowConsumerOptions _options;
         private readonly TService _service;
+        private readonly ActionFlowConsumerOptions<TObj> _options;
+        private readonly ILogger<ActionFlowConsumerService<TObj, TService>> _logger;
+
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
-        private ActionBlock<TObj> _actionBlock;
+        private ActionBlock<MessageContent> _actionBlock;
         private ISubscription _subscription;
 
         public ActionFlowConsumerService(
             IMessageConsumer consumer,
             TService service,
-            ActionFlowConsumerOptions options,
+            ActionFlowConsumerOptions<TObj> options,
             ILogger<ActionFlowConsumerService<TObj, TService>> logger
             )
         {
@@ -30,11 +33,17 @@ namespace RabbitMQ.PubSub.HostedServices
             _service = service;
             _options = options;
             _logger = logger;
+
+            options.Pipelines.Reverse();
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _actionBlock = new ActionBlock<TObj>(ConsumeWithToken, new ExecutionDataflowBlockOptions
+            var callback = _options.Pipelines.Any()
+                ? (Func<MessageContent, Task>)ConsumeWithPipeline
+                : ConsumeWithToken;
+
+            _actionBlock = new ActionBlock<MessageContent>(callback, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = _stoppingCts.Token,
                 MaxDegreeOfParallelism = _options.MaxDegreeOfParallelism,
@@ -72,17 +81,42 @@ namespace RabbitMQ.PubSub.HostedServices
             _stoppingCts.Cancel();
         }
 
-        private Task ConsumeWithToken(TObj obj)
+        private Task ConsumeWithToken(MessageContent message)
         {
-            return _service.Consume(obj, _stoppingCts.Token);
+            return _service.Consume(message.Obj, _stoppingCts.Token);
         }
 
-        private void PostMessage(TObj message)
+        private Task ConsumeWithPipeline(MessageContent message)
         {
-            var posted = _actionBlock.Post(message);
+            Task consumerHandler() => _service.Consume(message.Obj, _stoppingCts.Token);
+
+            var pipelineHandler = _options.Pipelines.Aggregate(
+                (Func<Task>)consumerHandler,
+                (next, pipe) => () => pipe.Handle(message.Obj, message.Header, _stoppingCts.Token, next)
+                );
+
+            return pipelineHandler();
+        }
+
+        private void PostMessage(TObj message, IDictionary<string, object> header)
+        {
+            var content = new MessageContent(message, header);
+            var posted = _actionBlock.Post(content);
             if (!posted)
             {
                 _logger.LogError("Could not post message: {message}", message);
+            }
+        }
+
+        private class MessageContent
+        {
+            public TObj Obj { get; }
+            public IDictionary<string, object> Header { get; }
+
+            public MessageContent(TObj obj, IDictionary<string, object> header)
+            {
+                Obj = obj;
+                Header = header;
             }
         }
     }

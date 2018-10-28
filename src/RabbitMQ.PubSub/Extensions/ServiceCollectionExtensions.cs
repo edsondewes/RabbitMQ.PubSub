@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.PubSub;
@@ -37,20 +36,21 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The Microsoft.Extensions.DependencyInjection.IServiceCollection to register with.</param>
         /// <param name="builder">An action to configure the subscription behavior.</param>
         /// <returns>The original Microsoft.Extensions.DependencyInjection.IServiceCollection.</returns>
-        public static IServiceCollection AddActionFlowConsumer<TObj, TService>(this IServiceCollection services, Action<IActionFlowConsumerOptionsBuilder> builder)
+        public static IServiceCollection AddActionFlowConsumer<TObj, TService>(this IServiceCollection services, Action<IActionFlowConsumerOptionsBuilder<TObj>> builder)
             where TService : class, IBackgroundConsumer<TObj>
         {
-            var optionsBuilder = new ActionFlowConsumerOptionsBuilder();
-            builder(optionsBuilder);
+            services.AddTransient<IHostedService>(provider =>
+            {
+                var optionsBuilder = new ActionFlowConsumerOptionsBuilder<TObj>(provider);
+                builder(optionsBuilder);
 
-            services.TryAddSingleton<TService>();
-            services.AddTransient<IHostedService>(provider => new ActionFlowConsumerService<TObj, TService>(
-                provider.GetRequiredService<IMessageConsumer>(),
-                provider.GetRequiredService<TService>(),
-                optionsBuilder.Options,
-                provider.GetRequiredService<ILogger<ActionFlowConsumerService<TObj, TService>>>()
-                )
-            );
+                return new ActionFlowConsumerService<TObj, TService>(
+                    provider.GetRequiredService<IMessageConsumer>(),
+                    ActivatorUtilities.GetServiceOrCreateInstance<TService>(provider),
+                    optionsBuilder.Options,
+                    provider.GetRequiredService<ILogger<ActionFlowConsumerService<TObj, TService>>>()
+                    );
+            });
 
             return services;
         }

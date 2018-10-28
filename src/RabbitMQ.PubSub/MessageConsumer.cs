@@ -35,7 +35,7 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public ISubscription Subscribe<T>(Action<T> callback, SubscriptionOptions options = null)
+        public ISubscription Subscribe<T>(Action<T, IDictionary<string, object>> callback, SubscriptionOptions options = null)
         {
             var exchange = options?.Exchange ?? _config.DefaultExchange;
 
@@ -48,7 +48,7 @@ namespace RabbitMQ.PubSub
             {
                 var serializer = _serialization.GetSerializer(eventArgs.BasicProperties.ContentType);
                 var obj = serializer.Deserialize<T>(eventArgs.Body);
-                callback(obj);
+                callback(obj, eventArgs.BasicProperties.Headers);
             };
 
             return new SubscriptionImpl(_model, consumerTag);
