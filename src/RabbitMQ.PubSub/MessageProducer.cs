@@ -37,24 +37,25 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public Task Publish<T>(T obj, string routingKey = null, string exchange = null, string mimeType = null)
+        public Task Publish<T>(T obj, PublishOptions options)
         {
-            return Publish<T>(new[] { obj }, routingKey, exchange, mimeType);
+            return Publish<T>(new[] { obj }, options);
         }
 
-        public Task Publish<T>(IEnumerable<T> obj, string routingKey = null, string exchange = null, string mimeType = null)
+        public Task Publish<T>(IEnumerable<T> obj, PublishOptions options)
         {
-            var serializer = _serialization.GetSerializer(mimeType);
+            var serializer = _serialization.GetSerializer(options?.MimeType);
             var properties = _model.CreateBasicProperties();
             properties.Persistent = _config.PersistentDelivery;
             properties.ContentType = serializer.MimeType;
+            properties.Headers = options?.Headers;
 
             var commands = obj.Select(message => new PublishCommand
             {
                 Body = serializer.Serialize(message),
-                Exchange = exchange ?? _config.DefaultExchange,
+                Exchange = options?.Exchange ?? _config.DefaultExchange,
                 Properties = properties,
-                RoutingKey = routingKey ?? string.Empty
+                RoutingKey = options?.RoutingKey ?? string.Empty
             }).ToArray();
 
             return _publishBlock.SendAsync(commands);
@@ -99,6 +100,14 @@ namespace RabbitMQ.PubSub
             }
 
             batch.Publish();
+        }
+
+        private class PublishCommand
+        {
+            public byte[] Body { get; set; }
+            public string Exchange { get; set; }
+            public string RoutingKey { get; set; }
+            public IBasicProperties Properties { get; set; }
         }
     }
 }
