@@ -4,6 +4,6 @@ namespace RabbitMQ.PubSub
 {
     public interface IConnectionHelper
     {
-        IConnection TryCreateConnection(string host);
+        IConnection CreateConnection(string host);
     }
 }
