@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenTracing;
 using OpenTracing.Util;
 using RabbitMQ.PubSub;
+using RabbitMQ.PubSub.HostedServices;
 
 namespace JaegerTracingWeb
 {
@@ -45,13 +46,9 @@ namespace JaegerTracingWeb
             services.Configure<ConfigRabbitMQ>(Configuration.GetSection("RabbitMQ"));
             services.AddRabbitPubSub();
 
-            services.AddActionFlowConsumer<SomeData, SomeDataBackgroundConsumer>(builder => builder
-                .WithPipeline<JaegerConsumerPipeline<SomeData>>()
-                .ForRoutingKeys("test"));
-
-            services.AddActionFlowConsumer<OtherData, OtherDataBackgroundConsumer>(builder => builder
-                .WithPipeline<JaegerConsumerPipeline<OtherData>>()
-                .ForRoutingKeys("test2"));
+            services.AddSingleton(typeof(IConsumerPipeline<>), typeof(JaegerConsumerPipeline<>));
+            services.AddActionFlowConsumer<SomeData, SomeDataBackgroundConsumer>(builder => builder.ForRoutingKeys("test"));
+            services.AddActionFlowConsumer<OtherData, OtherDataBackgroundConsumer>(builder => builder.ForRoutingKeys("test2"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

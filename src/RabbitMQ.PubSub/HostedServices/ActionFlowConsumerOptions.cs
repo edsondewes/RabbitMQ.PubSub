@@ -36,6 +36,9 @@ namespace RabbitMQ.PubSub.HostedServices
         {
             Options = new ActionFlowConsumerOptions<TObj>();
             _serviceProvider = serviceProvider;
+
+            var globalPipelines = serviceProvider.GetServices<IConsumerPipeline<TObj>>();
+            Options.Pipelines.AddRange(globalPipelines);
         }
 
         public IActionFlowConsumerOptionsBuilder<TObj> ForExchange(string exchange)
