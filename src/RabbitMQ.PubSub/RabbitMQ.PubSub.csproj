@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <PackageId>RabbitMQ.PubSub</PackageId>
-    <Version>1.0.0-preview1</Version>
+    <Version>1.0.0-preview5</Version>
     <Authors>Edson Dewes</Authors>
     <Description>RabbitMQ event manager for pub/sub</Description>
     <PackageProjectUrl>https://github.com/edsondewes/RabbitMQ.PubSub</PackageProjectUrl>
@@ -13,6 +13,9 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../../signkey.snk</AssemblyOriginatorKeyFile>
     <LangVersion>7.3</LangVersion>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +25,10 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.1" />
     <PackageReference Include="RabbitMQ.Client" Version="5.1.0" />
     <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All"/>
   </ItemGroup>
 
 </Project>
