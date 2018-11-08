@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-console",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/examples/ConsoleApp/ConsoleApp.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build-jaeger",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/examples/JaegerTracingWeb/JaegerTracingWeb.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

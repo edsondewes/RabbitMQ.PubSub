@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "console",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-console",
+      "program": "${workspaceFolder}/examples/ConsoleApp/bin/Debug/netcoreapp2.1/ConsoleApp.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/examples/ConsoleApp",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "jaeger",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-jaeger",
+      "program": "${workspaceFolder}/examples/JaegerTracingWeb/bin/Debug/netcoreapp2.1/JaegerTracingWeb.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/examples/JaegerTracingWeb",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "internalConsoleOptions": "openOnSessionStart"
+    }
+  ]
+}
