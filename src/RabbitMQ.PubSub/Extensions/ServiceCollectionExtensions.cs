@@ -36,13 +36,14 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The Microsoft.Extensions.DependencyInjection.IServiceCollection to register with.</param>
         /// <param name="builder">An action to configure the subscription behavior.</param>
         /// <returns>The original Microsoft.Extensions.DependencyInjection.IServiceCollection.</returns>
-        public static IServiceCollection AddActionFlowConsumer<TObj, TService>(this IServiceCollection services, Action<IActionFlowConsumerOptionsBuilder<TObj>> builder)
+        public static IServiceCollection AddActionFlowConsumer<TObj, TService>(this IServiceCollection services, Action<IActionFlowConsumerOptionsBuilder<TObj>> builder = null)
             where TService : class, IBackgroundConsumer<TObj>
         {
             services.AddTransient<IHostedService>(provider =>
             {
                 var optionsBuilder = new ActionFlowConsumerOptionsBuilder<TObj>(provider);
-                builder(optionsBuilder);
+                if (builder != null)
+                    builder(optionsBuilder);
 
                 return new ActionFlowConsumerService<TObj, TService>(
                     provider.GetRequiredService<IMessageConsumer>(),

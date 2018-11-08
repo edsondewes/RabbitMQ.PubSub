@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -39,7 +40,7 @@ namespace RabbitMQ.PubSub
         {
             var exchange = options?.Exchange ?? _config.DefaultExchange;
 
-            EnsureExchangeCreated(exchange);
+            EnsureExchangeCreated(exchange, options.ExchangeType());
             var queueName = EnsureQueueCreated(options?.RoutingKeys, exchange, options?.Queue);
 
             var consumer = new EventingBasicConsumer(_model);
@@ -59,9 +60,9 @@ namespace RabbitMQ.PubSub
             _logger.LogError(e.Exception, "A message could not be processed");
         }
 
-        private void EnsureExchangeCreated(string name)
+        private void EnsureExchangeCreated(string name, string type)
         {
-            _model.ExchangeDeclare(name, ExchangeType.Topic, durable: true, autoDelete: false);
+            _model.ExchangeDeclare(name, type, durable: true, autoDelete: false);
         }
 
         private string EnsureQueueCreated(IEnumerable<string> routingKeys, string exchange, string queue)
@@ -71,6 +72,9 @@ namespace RabbitMQ.PubSub
                 autoDelete: !_config.DurableQueues || string.IsNullOrEmpty(queue),
                 durable: _config.DurableQueues,
                 exclusive: false).QueueName;
+
+            if (routingKeys == null || !routingKeys.Any())
+                routingKeys = new[] { string.Empty };
 
             foreach (var routingKey in routingKeys)
             {

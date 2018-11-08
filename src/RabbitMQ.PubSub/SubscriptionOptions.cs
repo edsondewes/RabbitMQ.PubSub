@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace RabbitMQ.PubSub
 {
@@ -7,5 +8,16 @@ namespace RabbitMQ.PubSub
         public string Exchange { get; set; }
         public string Queue { get; set; }
         public IEnumerable<string> RoutingKeys { get; set; }
+    }
+
+    public static class SubscriptionOptionsExtensions
+    {
+        public static string ExchangeType(this SubscriptionOptions options)
+        {
+            if (options != null && options.RoutingKeys != null && options.RoutingKeys.Any())
+                return RabbitMQ.Client.ExchangeType.Topic;
+
+            return RabbitMQ.Client.ExchangeType.Fanout;
+        }
     }
 }
