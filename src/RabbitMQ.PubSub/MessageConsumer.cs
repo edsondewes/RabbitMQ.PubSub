@@ -22,7 +22,7 @@ namespace RabbitMQ.PubSub
             ILogger<MessageConsumer> logger)
         {
             _config = config.Value;
-            _connection = connectionFactory.CreateConnection(_config.Host);
+            _connection = connectionFactory.CreateConnection(_config);
             _serialization = serialization;
             _logger = logger;
 

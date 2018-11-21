@@ -18,7 +18,7 @@ namespace RabbitMQ.PubSub
         public MessageProducer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory, ISerializationManager serialization)
         {
             _config = config.Value;
-            _connection = connectionFactory.CreateConnection(_config.Host);
+            _connection = connectionFactory.CreateConnection(_config);
             _model = _connection.CreateModel();
             _serialization = serialization;
             
