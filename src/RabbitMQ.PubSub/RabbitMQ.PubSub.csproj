@@ -9,6 +9,7 @@
     <Description>RabbitMQ event manager for pub/sub</Description>
     <PackageProjectUrl>https://github.com/edsondewes/RabbitMQ.PubSub</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/edsondewes/RabbitMQ.PubSub/master/LICENSE</PackageLicenseUrl>
+    <NoWarn>$(NoWarn);NU5125</NoWarn>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../../signkey.snk</AssemblyOriginatorKeyFile>
