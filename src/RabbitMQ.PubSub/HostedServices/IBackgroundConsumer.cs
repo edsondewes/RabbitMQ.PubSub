@@ -5,6 +5,6 @@ namespace RabbitMQ.PubSub.HostedServices
 {
     public interface IBackgroundConsumer<T>
     {
-        Task Consume(T obj, CancellationToken cancellationToken);
+        Task Consume(T obj, MessageContext context, CancellationToken cancellationToken);
     }
 }

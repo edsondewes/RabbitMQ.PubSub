@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace RabbitMQ.PubSub
 {
     public interface IMessageConsumer : IDisposable
     {
-        ISubscription Subscribe<T>(Action<T, IDictionary<string, object>> callback, SubscriptionOptions options = null);
+        ISubscription Subscribe<T>(Action<T, MessageContext> callback, SubscriptionOptions options = null);
     }
 }

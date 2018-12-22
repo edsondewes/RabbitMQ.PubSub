@@ -19,7 +19,7 @@ namespace RabbitMQ.PubSub.HostedServices
 
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
-        private ActionBlock<MessageContent> _actionBlock;
+        private ActionBlock<PostedMessage> _actionBlock;
         private ISubscription _subscription;
 
         public ActionFlowConsumerService(
@@ -40,10 +40,10 @@ namespace RabbitMQ.PubSub.HostedServices
         public Task StartAsync(CancellationToken cancellationToken)
         {
             var callback = _options.Pipelines.Any()
-                ? (Func<MessageContent, Task>)ConsumeWithPipeline
+                ? (Func<PostedMessage, Task>)ConsumeWithPipeline
                 : ConsumeWithToken;
 
-            _actionBlock = new ActionBlock<MessageContent>(callback, new ExecutionDataflowBlockOptions
+            _actionBlock = new ActionBlock<PostedMessage>(callback, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = _stoppingCts.Token,
                 MaxDegreeOfParallelism = _options.MaxDegreeOfParallelism,
@@ -81,26 +81,26 @@ namespace RabbitMQ.PubSub.HostedServices
             _stoppingCts.Cancel();
         }
 
-        private Task ConsumeWithToken(MessageContent message)
+        private Task ConsumeWithToken(PostedMessage message)
         {
-            return _service.Consume(message.Obj, _stoppingCts.Token);
+            return _service.Consume(message.Obj, message.Context, _stoppingCts.Token);
         }
 
-        private Task ConsumeWithPipeline(MessageContent message)
+        private Task ConsumeWithPipeline(PostedMessage message)
         {
-            Task consumerHandler() => _service.Consume(message.Obj, _stoppingCts.Token);
+            Task consumerHandler() => _service.Consume(message.Obj, message.Context, _stoppingCts.Token);
 
             var pipelineHandler = _options.Pipelines.Aggregate(
                 (Func<Task>)consumerHandler,
-                (next, pipe) => () => pipe.Handle(message.Obj, message.Header, _stoppingCts.Token, next)
+                (next, pipe) => () => pipe.Handle(message.Obj, message.Context, _stoppingCts.Token, next)
                 );
 
             return pipelineHandler();
         }
 
-        private void PostMessage(TObj message, IDictionary<string, object> header)
+        private void PostMessage(TObj message, MessageContext context)
         {
-            var content = new MessageContent(message, header);
+            var content = new PostedMessage(message, context);
             var posted = _actionBlock.Post(content);
             if (!posted)
             {
@@ -108,15 +108,15 @@ namespace RabbitMQ.PubSub.HostedServices
             }
         }
 
-        private class MessageContent
+        private class PostedMessage
         {
             public TObj Obj { get; }
-            public IDictionary<string, object> Header { get; }
+            public MessageContext Context { get; }
 
-            public MessageContent(TObj obj, IDictionary<string, object> header)
+            public PostedMessage(TObj obj, MessageContext context)
             {
                 Obj = obj;
-                Header = header;
+                Context = context;
             }
         }
     }

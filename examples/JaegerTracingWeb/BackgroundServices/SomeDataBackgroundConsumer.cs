@@ -20,7 +20,7 @@ namespace JaegerTracingWeb.BackgroundServices
             _random = new Random();
         }
 
-        public async Task Consume(SomeData obj, CancellationToken cancellationToken)
+        public async Task Consume(SomeData obj, MessageContext context, CancellationToken cancellationToken)
         {
             var randomDelay = _random.Next(50);
             await Task.Delay(randomDelay, cancellationToken);

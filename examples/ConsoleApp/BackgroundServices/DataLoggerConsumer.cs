@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using ConsoleApp.Services;
+using RabbitMQ.PubSub;
 using RabbitMQ.PubSub.HostedServices;
 
 namespace ConsoleApp.BackgroundServices
@@ -14,7 +15,7 @@ namespace ConsoleApp.BackgroundServices
             _delayedLogger = delayedLogger;
         }
 
-        public async Task Consume(SomeData obj, CancellationToken cancellationToken)
+        public async Task Consume(SomeData obj, MessageContext context, CancellationToken cancellationToken)
         {
             await _delayedLogger.Log("Data received: {id} - {name}", new object[] { obj.Id, obj.Name }, cancellationToken);
         }

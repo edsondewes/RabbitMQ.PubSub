@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using RabbitMQ.PubSub;
 using RabbitMQ.PubSub.HostedServices;
 
 namespace JaegerTracingWeb.BackgroundServices
@@ -17,7 +18,7 @@ namespace JaegerTracingWeb.BackgroundServices
             _random = new Random();
         }
 
-        public async Task Consume(OtherData obj, CancellationToken cancellationToken)
+        public async Task Consume(OtherData obj, MessageContext context, CancellationToken cancellationToken)
         {
             var randomDelay = _random.Next(50);
             await Task.Delay(randomDelay, cancellationToken);

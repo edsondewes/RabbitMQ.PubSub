@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenTracing;
+using RabbitMQ.PubSub;
 using RabbitMQ.PubSub.HostedServices;
 
 namespace JaegerTracingWeb.BackgroundServices
@@ -16,10 +16,10 @@ namespace JaegerTracingWeb.BackgroundServices
             _tracer = tracer;
         }
 
-        public async Task Handle(T obj, IDictionary<string, object> headers, CancellationToken cancellationToken, Func<Task> next)
+        public async Task Handle(T obj, MessageContext context, CancellationToken cancellationToken, Func<Task> next)
         {
             using (IScope scope = _tracer.BuildSpan($"IBackgroundConsumer<{typeof(T).Name}>")
-                  .AsChildOf(_tracer.ExtractFromRabbitMQ(headers))
+                  .AsChildOf(_tracer.ExtractFromRabbitMQ(context.Headers))
                   .StartActive(finishSpanOnDispose: true))
             {
                 await next();
