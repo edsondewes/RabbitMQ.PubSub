@@ -71,11 +71,16 @@ namespace RabbitMQ.PubSub
 
         private string EnsureQueueCreated(IEnumerable<string> routingKeys, string exchange, string queue)
         {
+            var args = _config.LazyQueues
+                ? new Dictionary<string, object> { { "x-queue-mode", "lazy" } }
+                : null;
+
             var queueName = _model.QueueDeclare(
                 queue: queue ?? string.Empty,
                 autoDelete: !_config.DurableQueues || string.IsNullOrEmpty(queue),
                 durable: _config.DurableQueues,
-                exclusive: false).QueueName;
+                exclusive: false,
+                arguments: args).QueueName;
 
             if (routingKeys == null || !routingKeys.Any())
                 routingKeys = new[] { string.Empty };
