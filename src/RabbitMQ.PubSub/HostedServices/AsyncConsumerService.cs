@@ -42,6 +42,7 @@ namespace RabbitMQ.PubSub.HostedServices
 
             _subscription = _consumer.Subscribe(callback, new SubscriptionOptions
             {
+                AutoAck = _options.AutoAck,
                 Exchange = _options.Exchange,
                 Queue = _options.QueueName,
                 RoutingKeys = _options.RoutingKeys

@@ -39,18 +39,19 @@ namespace RabbitMQ.PubSub
 
         public ISubscription Subscribe<T>(Func<T, MessageContext, Task> callback, SubscriptionOptions options = null)
         {
+            var autoAck = options?.AutoAck ?? true;
             var exchange = options?.Exchange ?? _config.DefaultExchange;
 
             EnsureExchangeCreated(exchange, options.ExchangeType());
             var queueName = EnsureQueueCreated(options?.RoutingKeys, exchange, options?.Queue);
 
             var consumer = new AsyncEventingBasicConsumer(_model);
-            var consumerTag = _model.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
+            var consumerTag = _model.BasicConsume(queue: queueName, autoAck: autoAck, consumer: consumer);
             consumer.Received += (_, eventArgs) =>
             {
                 var serializer = _serialization.GetSerializer(eventArgs.BasicProperties.ContentType);
                 var obj = serializer.Deserialize<T>(eventArgs.Body);
-                var context = new MessageContext(eventArgs.BasicProperties);
+                var context = new MessageContext(eventArgs, autoAck, _model);
 
                 return callback(obj, context);
             };

@@ -6,6 +6,7 @@ namespace RabbitMQ.PubSub.HostedServices
 {
     public class AsyncConsumerOptions<TObj>
     {
+        public bool AutoAck { get; set; } = true;
         public string Exchange { get; set; }
         public List<IConsumerPipeline<TObj>> Pipelines { get; set; }
         public string QueueName { get; set; }
@@ -21,6 +22,7 @@ namespace RabbitMQ.PubSub.HostedServices
     {
         IAsyncConsumerOptionsBuilder<TObj> ForExchange(string exchange);
         IAsyncConsumerOptionsBuilder<TObj> ForRoutingKeys(params string[] routingKeys);
+        IAsyncConsumerOptionsBuilder<TObj> WithManualAck();
         IAsyncConsumerOptionsBuilder<TObj> WithPipeline<TPipe>() where TPipe : IConsumerPipeline<TObj>;
         IAsyncConsumerOptionsBuilder<TObj> WithQueueName(string queueName);
     }
@@ -48,6 +50,12 @@ namespace RabbitMQ.PubSub.HostedServices
         public IAsyncConsumerOptionsBuilder<TObj> ForRoutingKeys(params string[] routingKeys)
         {
             Options.RoutingKeys = routingKeys;
+            return this;
+        }
+
+        public IAsyncConsumerOptionsBuilder<TObj> WithManualAck()
+        {
+            Options.AutoAck = false;
             return this;
         }
 

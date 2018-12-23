@@ -32,7 +32,10 @@ namespace ConsoleApp
                 services.Configure<ConfigRabbitMQ>(hostContext.Configuration.GetSection("RabbitMQ"));
                 services.AddRabbitPubSub();
 
-                services.AddAsyncConsumer<SomeData, DataLoggerConsumer>(builder => builder.ForRoutingKeys("test"));
+                services.AddAsyncConsumer<SomeData, DataLoggerConsumer>(builder => builder
+                    .ForRoutingKeys("test")
+                    .WithManualAck()
+                );
 
                 services.AddHostedService<RandomDataProducer>();
             })
