@@ -1,7 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
@@ -12,7 +9,6 @@ namespace RabbitMQ.PubSub
         private readonly IConnection _connection;
         private readonly ConfigRabbitMQ _config;
         private readonly IModel _model;
-        private readonly ActionBlock<PublishCommand[]> _publishBlock;
         private readonly ISerializationManager _serialization;
 
         public MessageProducer(IOptions<ConfigRabbitMQ> config, IConnectionHelper connectionFactory, ISerializationManager serialization)
@@ -21,14 +17,6 @@ namespace RabbitMQ.PubSub
             _connection = connectionFactory.CreateConnection(_config);
             _model = _connection.CreateModel();
             _serialization = serialization;
-            
-            _publishBlock = new ActionBlock<PublishCommand[]>(Send);
-        }
-
-        public Task Complete()
-        {
-            _publishBlock.Complete();
-            return _publishBlock.Completion;
         }
 
         public void Dispose()
@@ -37,12 +25,39 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public Task Publish<T>(T obj, PublishOptions options)
+        public void Publish<T>(T obj, PublishOptions options)
         {
-            return Publish<T>(new[] { obj }, options);
+            var context = CreateContext<T>(options);
+            
+            _model.BasicPublish(
+                basicProperties: context.Properties,
+                body: context.Serialize(obj),
+                exchange: context.Exchange,
+                routingKey: context.RoutingKey
+                );
         }
 
-        public Task Publish<T>(IEnumerable<T> obj, PublishOptions options)
+        public void Publish<T>(IEnumerable<T> enumerable, PublishOptions options)
+        {
+            var context = CreateContext<T>(options);
+
+            var batch = _model.CreateBasicPublishBatch();
+            foreach (var obj in enumerable)
+            {
+                var body = context.Serialize(obj);
+
+                batch.Add(exchange: context.Exchange,
+                    body: body,
+                    mandatory: false,
+                    properties: context.Properties,
+                    routingKey: context.RoutingKey
+                    );
+            }
+
+            batch.Publish();
+        }
+
+        private PublishContext<T> CreateContext<T>(PublishOptions options)
         {
             var serializer = _serialization.GetSerializer(options?.MimeType);
             var properties = _model.CreateBasicProperties();
@@ -50,64 +65,35 @@ namespace RabbitMQ.PubSub
             properties.ContentType = serializer.MimeType;
             properties.Headers = options?.Headers;
 
-            var commands = obj.Select(message => new PublishCommand
-            {
-                Body = serializer.Serialize(message),
-                Exchange = options?.Exchange ?? _config.DefaultExchange,
-                Properties = properties,
-                RoutingKey = options?.RoutingKey ?? string.Empty
-            }).ToArray();
+            var exchange = options?.Exchange ?? _config.DefaultExchange;
+            var routingKey = options?.RoutingKey ?? string.Empty;
 
-            return _publishBlock.SendAsync(commands);
-        }
-
-        private void Send(PublishCommand[] commands)
-        {
-            switch (commands.Length)
-            {
-                case 0:
-                    return;
-                case 1:
-                    SendSingle(commands[0]);
-                    return;
-                default:
-                    SendBatch(commands);
-                    return;
-            }
-        }
-
-        private void SendSingle(PublishCommand command)
-        {
-            _model.BasicPublish(
-                basicProperties: command.Properties,
-                body: command.Body,
-                exchange: command.Exchange,
-                routingKey: command.RoutingKey
+            return new PublishContext<T>(
+                exchange: exchange,
+                properties: properties,
+                routingKey: routingKey,
+                serializer: serializer
                 );
         }
-
-        private void SendBatch(PublishCommand[] commands)
+        
+        private readonly struct PublishContext<T>
         {
-            var batch = _model.CreateBasicPublishBatch();
-            foreach (var command in commands)
+            private readonly ISerializer _serializer;
+
+            public string Exchange { get; }
+            public IBasicProperties Properties { get; }
+            public string RoutingKey { get; }
+
+            public PublishContext(IBasicProperties properties, ISerializer serializer, string exchange, string routingKey)
             {
-                batch.Add(exchange: command.Exchange,
-                    body: command.Body,
-                    mandatory: false,
-                    properties: command.Properties,
-                    routingKey: command.RoutingKey
-                    );
+                Properties = properties;
+                Exchange = exchange;
+                RoutingKey = routingKey;
+
+                _serializer = serializer;
             }
 
-            batch.Publish();
-        }
-
-        private class PublishCommand
-        {
-            public byte[] Body { get; set; }
-            public string Exchange { get; set; }
-            public string RoutingKey { get; set; }
-            public IBasicProperties Properties { get; set; }
+            public byte[] Serialize(T obj) => _serializer.Serialize(obj);
         }
     }
 }

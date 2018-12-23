@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -36,14 +37,14 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public ISubscription Subscribe<T>(Action<T, MessageContext> callback, SubscriptionOptions options = null)
+        public ISubscription Subscribe<T>(Func<T, MessageContext, Task> callback, SubscriptionOptions options = null)
         {
             var exchange = options?.Exchange ?? _config.DefaultExchange;
 
             EnsureExchangeCreated(exchange, options.ExchangeType());
             var queueName = EnsureQueueCreated(options?.RoutingKeys, exchange, options?.Queue);
 
-            var consumer = new EventingBasicConsumer(_model);
+            var consumer = new AsyncEventingBasicConsumer(_model);
             var consumerTag = _model.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
             consumer.Received += (_, eventArgs) =>
             {
@@ -51,7 +52,7 @@ namespace RabbitMQ.PubSub
                 var obj = serializer.Deserialize<T>(eventArgs.Body);
                 var context = new MessageContext(eventArgs.BasicProperties);
 
-                callback(obj, context);
+                return callback(obj, context);
             };
 
             return new SubscriptionImpl(_model, consumerTag);

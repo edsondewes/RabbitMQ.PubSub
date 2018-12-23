@@ -47,8 +47,8 @@ namespace JaegerTracingWeb
             services.AddRabbitPubSub();
 
             services.AddSingleton(typeof(IConsumerPipeline<>), typeof(JaegerConsumerPipeline<>));
-            services.AddActionFlowConsumer<SomeData, SomeDataBackgroundConsumer>(builder => builder.ForRoutingKeys("test"));
-            services.AddActionFlowConsumer<OtherData, OtherDataBackgroundConsumer>(builder => builder.ForRoutingKeys("test2"));
+            services.AddAsyncConsumer<SomeData, SomeDataBackgroundConsumer>(builder => builder.ForRoutingKeys("test"));
+            services.AddAsyncConsumer<OtherData, OtherDataBackgroundConsumer>(builder => builder.ForRoutingKeys("test2"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

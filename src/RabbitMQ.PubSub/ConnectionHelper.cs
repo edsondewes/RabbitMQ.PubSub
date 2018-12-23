@@ -8,6 +8,7 @@ namespace RabbitMQ.PubSub
         {
             var factory = new ConnectionFactory
             {
+                DispatchConsumersAsync = true,
                 HostName = options.Host,
                 Password = options.Password ?? ConnectionFactory.DefaultPass,
                 UserName = options.User ?? ConnectionFactory.DefaultUser,

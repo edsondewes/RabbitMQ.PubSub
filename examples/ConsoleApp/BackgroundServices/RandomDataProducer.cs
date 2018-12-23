@@ -30,7 +30,7 @@ namespace ConsoleApp.BackgroundServices
                     Name = $"Some Name {number}"
                 };
 
-                await _producer.Publish(data, PublishOptions.RoutingTo(RountingKey));
+                _producer.Publish(data, PublishOptions.RoutingTo(RountingKey));
                 await Task.Delay(1000, stoppingToken);
             }
         }
