@@ -29,6 +29,9 @@ namespace RabbitMQ.PubSub
 
             _model = _connection.CreateModel();
             _model.CallbackException += CallbackException;
+
+            if (_config.PrefetchCount.HasValue)
+                _model.BasicQos(0, _config.PrefetchCount.Value, global: false);
         }
 
         public void Dispose()
