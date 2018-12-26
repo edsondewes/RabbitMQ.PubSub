@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using ConsoleApp.Services;
 using RabbitMQ.PubSub;
-using RabbitMQ.PubSub.HostedServices;
 
 namespace ConsoleApp.BackgroundServices
 {

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace RabbitMQ.PubSub.HostedServices
+namespace RabbitMQ.PubSub
 {
     public class AsyncConsumerService<TObj, TService> : IHostedService
         where TService : IBackgroundConsumer<TObj>

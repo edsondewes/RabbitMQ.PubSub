@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.PubSub;
-using RabbitMQ.PubSub.HostedServices;
 using RabbitMQ.PubSub.Serializers;
 
 namespace Microsoft.Extensions.DependencyInjection

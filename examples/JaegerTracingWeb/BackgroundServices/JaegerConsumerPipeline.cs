@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenTracing;
 using RabbitMQ.PubSub;
-using RabbitMQ.PubSub.HostedServices;
 
 namespace JaegerTracingWeb.BackgroundServices
 {

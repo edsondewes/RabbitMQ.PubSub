@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RabbitMQ.PubSub.HostedServices
+namespace RabbitMQ.PubSub
 {
     public interface IConsumerPipeline<T>
     {

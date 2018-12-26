@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenTracing;
 using OpenTracing.Util;
 using RabbitMQ.PubSub;
-using RabbitMQ.PubSub.HostedServices;
 
 namespace JaegerTracingWeb
 {

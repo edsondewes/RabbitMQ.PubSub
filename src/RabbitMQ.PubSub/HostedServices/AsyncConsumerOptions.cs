@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace RabbitMQ.PubSub.HostedServices
+namespace RabbitMQ.PubSub
 {
     public class AsyncConsumerOptions<TObj>
     {
