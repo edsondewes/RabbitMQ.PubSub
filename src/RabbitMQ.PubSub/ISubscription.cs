@@ -24,6 +24,7 @@ namespace RabbitMQ.PubSub
             if (!_disposed)
             {
                 _model.BasicCancel(_consumerTag);
+                _model.Dispose();
                 _disposed = true;
             }
         }

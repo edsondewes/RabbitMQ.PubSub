@@ -14,7 +14,6 @@ namespace RabbitMQ.PubSub
         private readonly ConfigRabbitMQ _config;
         private readonly IConnection _connection;
         private readonly ILogger<MessageConsumer> _logger;
-        private readonly IModel _model;
         private readonly ISerializationManager _serialization;
 
         public MessageConsumer(IOptions<ConfigRabbitMQ> config,
@@ -26,17 +25,10 @@ namespace RabbitMQ.PubSub
             _connection = connectionFactory.CreateConnection(_config);
             _serialization = serialization;
             _logger = logger;
-
-            _model = _connection.CreateModel();
-            _model.CallbackException += CallbackException;
-
-            if (_config.PrefetchCount.HasValue)
-                _model.BasicQos(0, _config.PrefetchCount.Value, global: false);
         }
 
         public void Dispose()
         {
-            _model.Dispose();
             _connection.Dispose();
         }
 
@@ -45,21 +37,22 @@ namespace RabbitMQ.PubSub
             var autoAck = options?.AutoAck ?? true;
             var exchange = options?.Exchange ?? _config.DefaultExchange;
 
-            EnsureExchangeCreated(exchange, options.ExchangeType());
-            var queueName = EnsureQueueCreated(options?.RoutingKeys, exchange, options?.Queue);
+            var model = CreateModel();
+            EnsureExchangeCreated(model, exchange, options.ExchangeType());
+            var queueName = EnsureQueueCreated(model, options?.RoutingKeys, exchange, options?.Queue);
 
-            var consumer = new AsyncEventingBasicConsumer(_model);
-            var consumerTag = _model.BasicConsume(queue: queueName, autoAck: autoAck, consumer: consumer);
+            var consumer = new AsyncEventingBasicConsumer(model);
+            var consumerTag = model.BasicConsume(queue: queueName, autoAck: autoAck, consumer: consumer);
             consumer.Received += (_, eventArgs) =>
             {
                 var serializer = _serialization.GetSerializer(eventArgs.BasicProperties.ContentType);
                 var obj = serializer.Deserialize<T>(eventArgs.Body);
-                var context = new MessageContext(eventArgs, autoAck, _model);
+                var context = new MessageContext(eventArgs, autoAck, model);
 
                 return callback(obj, context);
             };
 
-            return new SubscriptionImpl(_model, consumerTag);
+            return new SubscriptionImpl(model, consumerTag);
         }
 
         private void CallbackException(object sender, CallbackExceptionEventArgs e)
@@ -67,18 +60,29 @@ namespace RabbitMQ.PubSub
             _logger.LogError(e.Exception, "A message could not be processed");
         }
 
-        private void EnsureExchangeCreated(string name, string type)
+        private IModel CreateModel()
         {
-            _model.ExchangeDeclare(name, type, durable: true, autoDelete: false);
+            var model = _connection.CreateModel();
+            model.CallbackException += CallbackException;
+
+            if (_config.PrefetchCount.HasValue)
+                model.BasicQos(0, _config.PrefetchCount.Value, global: false);
+
+            return model;
         }
 
-        private string EnsureQueueCreated(IEnumerable<string> routingKeys, string exchange, string queue)
+        private void EnsureExchangeCreated(IModel model, string name, string type)
+        {
+            model.ExchangeDeclare(name, type, durable: true, autoDelete: false);
+        }
+
+        private string EnsureQueueCreated(IModel model, IEnumerable<string> routingKeys, string exchange, string queue)
         {
             var args = _config.LazyQueues
                 ? new Dictionary<string, object> { { "x-queue-mode", "lazy" } }
                 : null;
 
-            var queueName = _model.QueueDeclare(
+            var queueName = model.QueueDeclare(
                 queue: queue ?? string.Empty,
                 autoDelete: !_config.DurableQueues || string.IsNullOrEmpty(queue),
                 durable: _config.DurableQueues,
@@ -90,7 +94,7 @@ namespace RabbitMQ.PubSub
 
             foreach (var routingKey in routingKeys)
             {
-                _model.QueueBind(
+                model.QueueBind(
                     queue: queueName,
                     exchange: exchange,
                     routingKey: routingKey);

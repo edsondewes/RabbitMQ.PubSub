@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <PackageId>RabbitMQ.PubSub</PackageId>
-    <Version>1.0.0-preview8</Version>
+    <Version>1.0.0-preview9</Version>
     <Authors>Edson Dewes</Authors>
     <Description>RabbitMQ event manager for pub/sub</Description>
     <PackageProjectUrl>https://github.com/edsondewes/RabbitMQ.PubSub</PackageProjectUrl>
