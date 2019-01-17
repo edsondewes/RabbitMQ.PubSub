@@ -9,7 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{CE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "examples\ConsoleApp\ConsoleApp.csproj", "{5F86FE0E-5EBA-447E-9637-F42D2D16B7DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaegerTracingWeb", "examples\JaegerTracingWeb\JaegerTracingWeb.csproj", "{477FDD43-1CF0-4807-9BB3-BBE17247DC84}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JaegerTracingWeb", "examples\JaegerTracingWeb\JaegerTracingWeb.csproj", "{477FDD43-1CF0-4807-9BB3-BBE17247DC84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalrNotification", "examples\SignalrNotification\SignalrNotification.csproj", "{D5A8E0D3-0BB7-4107-8CD0-91938A403A63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +31,10 @@ Global
 		{477FDD43-1CF0-4807-9BB3-BBE17247DC84}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{477FDD43-1CF0-4807-9BB3-BBE17247DC84}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{477FDD43-1CF0-4807-9BB3-BBE17247DC84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5A8E0D3-0BB7-4107-8CD0-91938A403A63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5A8E0D3-0BB7-4107-8CD0-91938A403A63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5A8E0D3-0BB7-4107-8CD0-91938A403A63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5A8E0D3-0BB7-4107-8CD0-91938A403A63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,6 +42,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{5F86FE0E-5EBA-447E-9637-F42D2D16B7DD} = {CED058F2-1B6C-4853-9DDC-4DF34DD7C711}
 		{477FDD43-1CF0-4807-9BB3-BBE17247DC84} = {CED058F2-1B6C-4853-9DDC-4DF34DD7C711}
+		{D5A8E0D3-0BB7-4107-8CD0-91938A403A63} = {CED058F2-1B6C-4853-9DDC-4DF34DD7C711}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AB2AD941-D88D-4EAB-B302-E8E8A73A0ADC}
