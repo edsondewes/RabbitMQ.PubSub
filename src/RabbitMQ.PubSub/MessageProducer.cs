@@ -46,7 +46,7 @@ namespace RabbitMQ.PubSub
             }
         }
 
-        public void Publish<T>(IEnumerable<T> enumerable, PublishOptions options)
+        public void PublishBatch<T>(IEnumerable<T> enumerable, PublishOptions options)
         {
             var activity = MessageDiagnostics.StartMessageOut(options);
             try
