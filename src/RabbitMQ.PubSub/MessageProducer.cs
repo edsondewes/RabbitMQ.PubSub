@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using RabbitMQ.PubSub.Diagnostics;
 
 namespace RabbitMQ.PubSub
 {
@@ -27,42 +28,57 @@ namespace RabbitMQ.PubSub
 
         public void Publish<T>(T obj, PublishOptions options)
         {
-            var context = CreateContext<T>(options);
-            
-            _model.BasicPublish(
-                basicProperties: context.Properties,
-                body: context.Serialize(obj),
-                exchange: context.Exchange,
-                routingKey: context.RoutingKey
-                );
+            var activity = MessageDiagnostics.StartMessageOut(options);
+            try
+            {
+                var context = CreateContext<T>(options);
+
+                _model.BasicPublish(
+                    basicProperties: context.Properties,
+                    body: _serialization.Serialize(obj, context.Properties.ContentType),
+                    exchange: context.Exchange,
+                    routingKey: context.RoutingKey
+                    );
+            }
+            finally
+            {
+                MessageDiagnostics.StopMessageOut(activity, options);
+            }
         }
 
         public void Publish<T>(IEnumerable<T> enumerable, PublishOptions options)
         {
-            var context = CreateContext<T>(options);
-
-            var batch = _model.CreateBasicPublishBatch();
-            foreach (var obj in enumerable)
+            var activity = MessageDiagnostics.StartMessageOut(options);
+            try
             {
-                var body = context.Serialize(obj);
+                var context = CreateContext<T>(options);
 
-                batch.Add(exchange: context.Exchange,
-                    body: body,
-                    mandatory: false,
-                    properties: context.Properties,
-                    routingKey: context.RoutingKey
-                    );
+                var batch = _model.CreateBasicPublishBatch();
+                var messages = _serialization.SerializeBatch(enumerable, context.Properties.ContentType);
+                foreach (var obj in messages)
+                {
+                    batch.Add(
+                        exchange: context.Exchange,
+                        body: obj,
+                        mandatory: false,
+                        properties: context.Properties,
+                        routingKey: context.RoutingKey
+                        );
+                }
+
+                batch.Publish();
             }
-
-            batch.Publish();
+            finally
+            {
+                MessageDiagnostics.StopMessageOut(activity, options);
+            }
         }
 
         private PublishContext<T> CreateContext<T>(PublishOptions options)
         {
-            var serializer = _serialization.GetSerializer(options?.MimeType);
             var properties = _model.CreateBasicProperties();
             properties.Persistent = _config.PersistentDelivery;
-            properties.ContentType = serializer.MimeType;
+            properties.ContentType = options?.MimeType ?? _serialization.DefaultMimeType;
             properties.Headers = options?.Headers;
 
             var exchange = options?.Exchange ?? _config.DefaultExchange;
@@ -71,29 +87,22 @@ namespace RabbitMQ.PubSub
             return new PublishContext<T>(
                 exchange: exchange,
                 properties: properties,
-                routingKey: routingKey,
-                serializer: serializer
+                routingKey: routingKey
                 );
         }
-        
+
         private readonly struct PublishContext<T>
         {
-            private readonly ISerializer _serializer;
-
             public string Exchange { get; }
             public IBasicProperties Properties { get; }
             public string RoutingKey { get; }
 
-            public PublishContext(IBasicProperties properties, ISerializer serializer, string exchange, string routingKey)
+            public PublishContext(IBasicProperties properties, string exchange, string routingKey)
             {
                 Properties = properties;
                 Exchange = exchange;
                 RoutingKey = routingKey;
-
-                _serializer = serializer;
             }
-
-            public byte[] Serialize(T obj) => _serializer.Serialize(obj);
         }
     }
 }

@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using RabbitMQ.PubSub.Diagnostics;
 
 namespace RabbitMQ.PubSub
 {
     public interface ISerializationManager
     {
-        ISerializer GetSerializer(string mimeType = null);
+        string DefaultMimeType { get; }
+        T Deserialize<T>(byte[] body, string mimeType = null);
+        byte[] Serialize<T>(T obj, string mimeType = null);
+        List<byte[]> SerializeBatch<T>(IEnumerable<T> enumerable, string mimeType = null);
     }
 
     internal class SerializationManagerImpl : ISerializationManager
@@ -23,9 +27,51 @@ namespace RabbitMQ.PubSub
             _default = serializers.First();
         }
 
-        public ISerializer GetSerializer(string mimeType = null)
+        public string DefaultMimeType => _default.MimeType;
+
+        public T Deserialize<T>(byte[] body, string mimeType = null)
         {
-            if (string.IsNullOrEmpty(mimeType))
+            var activity = MessageDiagnostics.StartMessageDeserialize();
+
+            var serializer = GetSerializer(mimeType);
+            var obj = serializer.Deserialize<T>(body);
+
+            MessageDiagnostics.StopMessageDeserialize(activity);
+
+            return obj;
+        }
+
+        public byte[] Serialize<T>(T obj, string mimeType = null)
+        {
+            var activity = MessageDiagnostics.StartMessageSerialize();
+
+            var serializer = GetSerializer(mimeType);
+            var result = serializer.Serialize(obj);
+
+            MessageDiagnostics.StopMessageSerialize(activity);
+
+            return result;
+        }
+
+        public List<byte[]> SerializeBatch<T>(IEnumerable<T> enumerable, string mimeType = null)
+        {
+            var activity = MessageDiagnostics.StartMessageSerialize();
+
+            var serializer = GetSerializer(mimeType);
+            var list = new List<byte[]>();
+            foreach (var item in enumerable)
+            {
+                list.Add(serializer.Serialize(item));
+            }
+
+            MessageDiagnostics.StopMessageSerialize(activity);
+
+            return list;
+        }
+
+        private ISerializer GetSerializer(string mimeType = null)
+        {
+            if (mimeType is null)
                 return _default;
 
             return _dic[mimeType];

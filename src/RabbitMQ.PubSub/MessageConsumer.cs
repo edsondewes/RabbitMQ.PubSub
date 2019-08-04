@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.PubSub.Diagnostics;
 
 namespace RabbitMQ.PubSub
 {
@@ -43,13 +44,20 @@ namespace RabbitMQ.PubSub
 
             var consumer = new AsyncEventingBasicConsumer(model);
             var consumerTag = model.BasicConsume(queue: queueName, autoAck: autoAck, consumer: consumer);
-            consumer.Received += (_, eventArgs) =>
+            consumer.Received += async (_, eventArgs) =>
             {
-                var serializer = _serialization.GetSerializer(eventArgs.BasicProperties.ContentType);
-                var obj = serializer.Deserialize<T>(eventArgs.Body);
                 var context = new MessageContext(eventArgs, autoAck, model);
+                var activity = MessageDiagnostics.StartMessageIn(context);
 
-                return callback(obj, context);
+                try
+                {
+                    var obj = _serialization.Deserialize<T>(eventArgs.Body, eventArgs.BasicProperties.ContentType);
+                    await callback(obj, context);
+                }
+                finally
+                {
+                    MessageDiagnostics.StopMessageIn(activity, context);
+                }
             };
 
             return new SubscriptionImpl(model, consumerTag);
