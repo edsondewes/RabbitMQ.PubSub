@@ -26,9 +26,7 @@ namespace JaegerTracingWeb.BackgroundServices
             _logger.LogInformation("Received message {text} at {date}", obj.Text, obj.Date);
 
             var otherData = new OtherData { Date = DateTime.Now };
-            _producer.Publish(otherData, PublishOptions
-                .RoutingTo("test2")
-                .WithTraceContext());
+            _producer.Publish(otherData, PublishOptions.RoutingTo("test2"));
         }
     }
 }
