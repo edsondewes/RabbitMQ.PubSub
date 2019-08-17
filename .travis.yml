@@ -1,0 +1,26 @@
+language: csharp
+solution: RabbitMQ.PubSub.sln
+mono: none
+dotnet: 2.2.401
+
+env:
+  global:
+    secure: CLVdgNmn0VjTn1gYRzczkCopFIAaI+RUhPDL190Lbi8uTu2Y4sXzyobGFr/pECu6rQX2FNcab55nzHpzPO0L3L2DiJhnSvZWY1HYP07D6692yEgoEo2rHWnuw7x+Knf+5FJu3zLKAZDFx+jv+KpP4Ffi4L7NnXESB5NO48dBT4QbPaYGygoyPmWbC54Vjk1FD48rwRVgJWtg3ju59+5f9hkfihSVOompjjtb+d6Fpj9hHZotgKfo9ZWuYVY3ubHIsFCNyd+SQcC1BJxEI+GCrSmI1z3IXkTUf+nCoJtFZgQrTSGEm2PDAoVevMsWisAsfDUo6k8fMqMeHQLLwbfA98eYGAC0cSuLULWtM5A9rTjaCbsllEGxjMgSx2Xi3t4Cb393RELZYsIshVDLvPJN2Dbf5KmIAf96yL+mW/+ZNElgbS5YAIrMpMKZoLprdhtHF2zAjp+rKcwZ8PmnhyTPHftm5ssA7TgOHqBHRXUKRNmIjjV8EwFgL/En5N7tW7FWZg7E90e2EMOoFqkLTyZv4cPSB6ppGLRXMmwxD3rCbZlCuBvsN8fMxdOP554DhuvMo8c6UGCC0XAT7XUD/VMO9Kl4SK3kETKAl+A+5fBZKI4XGR7tp2c3oqo1lH92NvYJpZ7aEIoUTHpVhuS0o4sSTtsAxUY6NcpYplLVImhH4HM=
+
+install:
+- dotnet restore
+
+script:
+- dotnet build -c Release /p:VersionSuffix=preview$TRAVIS_BUILD_NUMBER
+
+deploy:
+  provider: script
+  script: dotnet nuget push -s https://api.nuget.org/v3/index.json -k $NUGET_KEY ./src/RabbitMQ.PubSub/bin/Release/RabbitMQ.PubSub.1.0.0-preview$TRAVIS_BUILD_NUMBER.nupkg
+  skip_cleanup: true
+  on:
+    branch: master
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always

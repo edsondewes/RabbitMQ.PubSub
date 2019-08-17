@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2041
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29209.62
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMQ.PubSub", "src\RabbitMQ.PubSub\RabbitMQ.PubSub.csproj", "{CA9A6E53-0C1E-4111-B0A6-A504734CB182}"
 EndProject
@@ -11,7 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "examples\Cons
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JaegerTracingWeb", "examples\JaegerTracingWeb\JaegerTracingWeb.csproj", "{477FDD43-1CF0-4807-9BB3-BBE17247DC84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalrNotification", "examples\SignalrNotification\SignalrNotification.csproj", "{D5A8E0D3-0BB7-4107-8CD0-91938A403A63}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalrNotification", "examples\SignalrNotification\SignalrNotification.csproj", "{D5A8E0D3-0BB7-4107-8CD0-91938A403A63}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{7754FE5F-F417-401F-8AA3-765A1AE2A472}"
+	ProjectSection(SolutionItems) = preProject
+		.travis.yml = .travis.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
