@@ -11,11 +11,11 @@ install:
 - dotnet restore
 
 script:
-- dotnet build -c Release /p:VersionSuffix=preview$TRAVIS_BUILD_NUMBER
+- dotnet build -c Release /p:VersionPrefix=1.0.$TRAVIS_BUILD_NUMBER
 
 deploy:
   provider: script
-  script: dotnet nuget push -s https://api.nuget.org/v3/index.json -k $NUGET_KEY ./src/RabbitMQ.PubSub/bin/Release/RabbitMQ.PubSub.1.0.0-preview$TRAVIS_BUILD_NUMBER.nupkg
+  script: dotnet nuget push -s https://api.nuget.org/v3/index.json -k $NUGET_KEY ./src/RabbitMQ.PubSub/bin/Release/RabbitMQ.PubSub.1.0.$TRAVIS_BUILD_NUMBER-preview.nupkg
   skip_cleanup: true
   on:
     branch: master

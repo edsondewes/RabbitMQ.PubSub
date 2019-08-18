@@ -8,9 +8,10 @@
   <!-- Package properties -->
   <PropertyGroup>
     <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix>preview</VersionSuffix>
     <Authors>Edson Dewes</Authors>
     <Description>RabbitMQ event manager for pub/sub</Description>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">true</GeneratePackageOnBuild>
     <PackageId>RabbitMQ.PubSub</PackageId>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/edsondewes/RabbitMQ.PubSub</PackageProjectUrl>
