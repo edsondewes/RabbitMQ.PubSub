@@ -46,8 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 return new AsyncConsumerService<TObj, TService>(
                     provider.GetRequiredService<IMessageConsumer>(),
                     ActivatorUtilities.GetServiceOrCreateInstance<TService>(provider),
-                    optionsBuilder.Options,
-                    provider.GetRequiredService<ILogger<AsyncConsumerService<TObj, TService>>>()
+                    optionsBuilder.Options
                     );
             });
 

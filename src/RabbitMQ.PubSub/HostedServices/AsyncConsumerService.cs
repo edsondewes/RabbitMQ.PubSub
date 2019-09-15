@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace RabbitMQ.PubSub
 {
@@ -13,34 +10,23 @@ namespace RabbitMQ.PubSub
         private readonly IMessageConsumer _consumer;
         private readonly TService _service;
         private readonly AsyncConsumerOptions<TObj> _options;
-        private readonly ILogger<AsyncConsumerService<TObj, TService>> _logger;
-
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
         private ISubscription _subscription;
 
-        public AsyncConsumerService(
-            IMessageConsumer consumer,
-            TService service,
-            AsyncConsumerOptions<TObj> options,
-            ILogger<AsyncConsumerService<TObj, TService>> logger
-            )
+        public AsyncConsumerService(IMessageConsumer consumer, TService service, AsyncConsumerOptions<TObj> options)
         {
             _consumer = consumer;
             _service = service;
             _options = options;
-            _logger = logger;
-
-            options.Pipelines.Reverse();
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            var callback = _options.Pipelines.Any()
-                ? (Func<TObj, MessageContext, Task>)ConsumeWithPipeline
-                : ConsumeWithToken;
+            var manager = new PipelineManager<TObj>(_service, _options.Pipelines, _stoppingCts.Token);
 
-            _subscription = _consumer.Subscribe(callback, new SubscriptionOptions
+            // Since each message is executed sequencially, we can use a shared manager
+            _subscription = _consumer.Subscribe<TObj>(manager.Run, new SubscriptionOptions
             {
                 AutoAck = _options.AutoAck,
                 Exchange = _options.Exchange,
@@ -57,23 +43,6 @@ namespace RabbitMQ.PubSub
             _stoppingCts.Cancel();
 
             return Task.CompletedTask;
-        }
-
-        private Task ConsumeWithToken(TObj obj, MessageContext context)
-        {
-            return _service.Consume(obj, context, _stoppingCts.Token);
-        }
-
-        private Task ConsumeWithPipeline(TObj obj, MessageContext context)
-        {
-            Task consumerHandler() => _service.Consume(obj, context, _stoppingCts.Token);
-
-            var pipelineHandler = _options.Pipelines.Aggregate(
-                (Func<Task>)consumerHandler,
-                (next, pipe) => () => pipe.Handle(obj, context, _stoppingCts.Token, next)
-                );
-
-            return pipelineHandler();
         }
     }
 }
