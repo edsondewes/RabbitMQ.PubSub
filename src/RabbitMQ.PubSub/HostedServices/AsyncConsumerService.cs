@@ -39,8 +39,8 @@ namespace RabbitMQ.PubSub
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _subscription.Dispose();
             _stoppingCts.Cancel();
+            _subscription.Dispose();
 
             return Task.CompletedTask;
         }
