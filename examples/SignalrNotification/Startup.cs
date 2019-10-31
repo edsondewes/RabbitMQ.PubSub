@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using RabbitMQ.PubSub;
 using SignalrNotification.HostedServices;
 using SignalrNotification.Hubs;
@@ -23,7 +22,7 @@ namespace SignalrNotification
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddControllers();
             services.AddSignalR();
 
             services.Configure<ConfigRabbitMQ>(Configuration.GetSection("RabbitMQ"));
@@ -35,21 +34,21 @@ namespace SignalrNotification
             services.AddReportListener<ActionReport, ActionReportListener>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseSignalR(routes =>
-            {
-                routes.MapHub<NotificationHub>("/notification");
-            });
-
             app.UseDefaultFiles();
             app.UseStaticFiles();
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                endpoints.MapHub<NotificationHub>("/notification");
+            });
         }
     }
 }

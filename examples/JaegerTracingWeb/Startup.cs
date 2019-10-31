@@ -2,9 +2,9 @@
 using JaegerTracingWeb.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using RabbitMQ.PubSub;
 
 namespace JaegerTracingWeb
@@ -20,7 +20,7 @@ namespace JaegerTracingWeb
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddControllers();
             services.AddTracing();
 
             services.Configure<ConfigRabbitMQ>(Configuration.GetSection("RabbitMQ"));
@@ -29,14 +29,18 @@ namespace JaegerTracingWeb
             services.AddAsyncConsumer<OtherData, OtherDataBackgroundConsumer>(builder => builder.ForRoutingKeys("test2"));
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
         }
     }
 }

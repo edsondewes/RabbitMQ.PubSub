@@ -24,11 +24,10 @@ namespace ConsoleApp.BackgroundServices
             while (!stoppingToken.IsCancellationRequested)
             {
                 var number = _random.Next();
-                var data = new SomeData
-                {
-                    Id = number,
-                    Name = $"Some Name {number}"
-                };
+                var data = new SomeData(
+                    id: number,
+                    name: $"Some Name {number}"
+                    );
 
                 _producer.Publish(data, PublishOptions.RoutingTo(RountingKey));
                 await Task.Delay(1000, stoppingToken);

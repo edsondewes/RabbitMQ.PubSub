@@ -1,5 +1,5 @@
-﻿import { HubConnectionBuilder } from "https://unpkg.com/@aspnet/signalr@1.1.0/dist/esm/index.js";
-import { Component, html } from "https://unpkg.com/htm@2.0.0/preact/standalone.mjs";
+﻿import { HubConnectionBuilder } from "https://unpkg.com/@microsoft/signalr@3.0.0/dist/esm/index.js";
+import { Component, html } from "https://unpkg.com/htm@2.2.1/preact/standalone.mjs";
 import BackgroundJobProgress from './BackgroundJobProgress.js';
 import SimpleRequestButton from './SimpleRequestButton.js';
 import { Notification } from './Notification.js';

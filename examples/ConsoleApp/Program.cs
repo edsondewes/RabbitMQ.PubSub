@@ -1,47 +1,33 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using ConsoleApp.BackgroundServices;
+﻿using ConsoleApp.BackgroundServices;
 using ConsoleApp.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using RabbitMQ.PubSub;
 
 namespace ConsoleApp
 {
     internal class Program
     {
-        public static async Task Main()
+        public static void Main(string[] args)
         {
-            var builder = CreateHostBuilder();
-            await builder.RunConsoleAsync();
+            CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder() => new HostBuilder()
-            .UseEnvironment("Development")
-            .ConfigureAppConfiguration((hostingContext, config) =>
-            {
-                config.SetBasePath(Directory.GetCurrentDirectory());
-                config.AddJsonFile("appsettings.json", optional: false);
-            })
-            .ConfigureServices((hostContext, services) =>
-            {
-                services.AddSingleton<DelayedLogger>();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services.AddSingleton<DelayedLogger>();
 
-                services.Configure<ConfigRabbitMQ>(hostContext.Configuration.GetSection("RabbitMQ"));
-                services.AddRabbitPubSub();
+                    services.Configure<ConfigRabbitMQ>(hostContext.Configuration.GetSection("RabbitMQ"));
+                    services.AddRabbitPubSub();
 
-                services.AddAsyncConsumer<SomeData, DataLoggerConsumer>(builder => builder
-                    .ForRoutingKeys("test")
-                    .WithManualAck()
-                );
+                    services.AddAsyncConsumer<SomeData, DataLoggerConsumer>(builder => builder
+                        .ForRoutingKeys("test")
+                        .WithManualAck()
+                    );
 
-                services.AddHostedService<RandomDataProducer>();
-            })
-            .ConfigureLogging(logging =>
-            {
-                logging.AddConsole();
-            });
+                    services.AddHostedService<RandomDataProducer>();
+                });
     }
 }

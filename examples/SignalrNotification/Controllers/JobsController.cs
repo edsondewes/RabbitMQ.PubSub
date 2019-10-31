@@ -9,7 +9,8 @@ using SignalrNotification.Report;
 namespace SignalrNotification.Controllers
 {
     [Route("api/[controller]")]
-    public class JobsController : Controller
+    [ApiController]
+    public class JobsController : ControllerBase
     {
         private readonly IReportProgress<ActionReport> _progress;
         private readonly IMessageProducer _producer;

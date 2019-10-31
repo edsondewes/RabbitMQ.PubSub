@@ -7,14 +7,14 @@ using OpenTracing.Util;
 
 namespace JaegerTracingWeb.Diagnostics
 {
-    public static class ServiceCollectionExtenrions
+    public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddTracing(this IServiceCollection services)
         {
             return services
                 .AddSingleton<ITracer>(serviceProvider =>
                 {
-                    var serviceName = serviceProvider.GetRequiredService<IHostingEnvironment>().ApplicationName;
+                    var serviceName = serviceProvider.GetRequiredService<IWebHostEnvironment>().ApplicationName;
                     var tracer = new Tracer.Builder(serviceName)
                         .WithSampler(new ConstSampler(true))
                         .Build();

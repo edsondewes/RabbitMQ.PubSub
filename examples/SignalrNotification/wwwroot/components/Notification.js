@@ -1,4 +1,4 @@
-import { Component, html } from "https://unpkg.com/htm@2.0.0/preact/standalone.mjs";
+import { Component, html } from "https://unpkg.com/htm@2.2.1/preact/standalone.mjs";
 
 const EventName = 'app-notify';
 

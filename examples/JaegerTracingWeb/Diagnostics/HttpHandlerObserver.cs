@@ -82,17 +82,14 @@ namespace JaegerTracingWeb.Diagnostics
                 case "System.Net.Http.HttpRequestOut.Stop":
                     {
                         var request = eventData.GetProperty("Request") as HttpRequestMessage;
-
                         if (request.Properties.TryGetValue(PropertiesKey, out object objSpan) && objSpan is ISpan span)
                         {
-                            var response = eventData.GetProperty("Response") as HttpResponseMessage;
-                            var requestTaskStatus = (TaskStatus)eventData.GetProperty("RequestTaskStatus");
-
-                            if (response != null)
+                            if (eventData.GetProperty("Response") is HttpResponseMessage response)
                             {
                                 span.SetTag(Tags.HttpStatus, (int)response.StatusCode);
                             }
 
+                            var requestTaskStatus = (TaskStatus)eventData.GetProperty("RequestTaskStatus");
                             if (requestTaskStatus == TaskStatus.Canceled || requestTaskStatus == TaskStatus.Faulted)
                             {
                                 span.SetTag(Tags.Error, true);
