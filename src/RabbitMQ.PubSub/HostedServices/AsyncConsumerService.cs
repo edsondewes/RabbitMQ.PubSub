@@ -12,7 +12,7 @@ namespace RabbitMQ.PubSub
         private readonly AsyncConsumerOptions<TObj> _options;
         private readonly CancellationTokenSource _stoppingCts = new CancellationTokenSource();
 
-        private ISubscription _subscription;
+        private ISubscription? _subscription;
 
         public AsyncConsumerService(IMessageConsumer consumer, TService service, AsyncConsumerOptions<TObj> options)
         {
@@ -40,7 +40,7 @@ namespace RabbitMQ.PubSub
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _stoppingCts.Cancel();
-            _subscription.Dispose();
+            _subscription?.Dispose();
 
             return Task.CompletedTask;
         }

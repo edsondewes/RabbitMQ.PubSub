@@ -4,10 +4,10 @@ namespace RabbitMQ.PubSub
 {
     public class PublishOptions
     {   
-        public string Exchange { get; set; }
-        public IDictionary<string, object> Headers { get; set; }
-        public string MimeType { get; set; }
-        public string RoutingKey { get; set; }
+        public string? Exchange { get; set; }
+        public IDictionary<string, object>? Headers { get; set; }
+        public string? MimeType { get; set; }
+        public string? RoutingKey { get; set; }
 
         public PublishOptions ToExchange(string exchange)
         {

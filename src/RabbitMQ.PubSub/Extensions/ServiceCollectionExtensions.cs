@@ -35,7 +35,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The Microsoft.Extensions.DependencyInjection.IServiceCollection to register with.</param>
         /// <param name="builder">An action to configure the subscription behavior.</param>
         /// <returns>The original Microsoft.Extensions.DependencyInjection.IServiceCollection.</returns>
-        public static IServiceCollection AddAsyncConsumer<TObj, TService>(this IServiceCollection services, Action<IAsyncConsumerOptionsBuilder<TObj>> builder = null)
+        public static IServiceCollection AddAsyncConsumer<TObj, TService>(this IServiceCollection services, Action<IAsyncConsumerOptionsBuilder<TObj>>? builder = null)
             where TService : class, IBackgroundConsumer<TObj>
         {
             services.AddTransient<IHostedService>(provider =>

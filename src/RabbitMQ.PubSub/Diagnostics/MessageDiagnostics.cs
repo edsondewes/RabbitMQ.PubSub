@@ -12,9 +12,9 @@ namespace RabbitMQ.PubSub.Diagnostics
 
         private static readonly DiagnosticListener _diagnostic = new DiagnosticListener(ListenerName);
 
-        public static Activity StartMessageDeserialize()
+        public static Activity? StartMessageDeserialize()
         {
-            Activity activity = null;
+            Activity? activity = null;
 
             if (_diagnostic.IsEnabled() && _diagnostic.IsEnabled(MessageDeserializeEvent))
             {
@@ -25,9 +25,9 @@ namespace RabbitMQ.PubSub.Diagnostics
             return activity;
         }
 
-        public static Activity StartMessageIn(MessageContext context)
+        public static Activity? StartMessageIn(MessageContext context)
         {
-            Activity activity = null;
+            Activity? activity = null;
 
             if (_diagnostic.IsEnabled() && _diagnostic.IsEnabled(MessageInEvent))
             {
@@ -38,9 +38,9 @@ namespace RabbitMQ.PubSub.Diagnostics
             return activity;
         }
 
-        public static Activity StartMessageOut(PublishOptions options)
+        public static Activity? StartMessageOut(PublishOptions options)
         {
-            Activity activity = null;
+            Activity? activity = null;
 
             if (_diagnostic.IsEnabled() && _diagnostic.IsEnabled(MessageOutEvent))
             {
@@ -51,9 +51,9 @@ namespace RabbitMQ.PubSub.Diagnostics
             return activity;
         }
 
-        public static Activity StartMessageSerialize()
+        public static Activity? StartMessageSerialize()
         {
-            Activity activity = null;
+            Activity? activity = null;
 
             if (_diagnostic.IsEnabled() && _diagnostic.IsEnabled(MessageSerializeEvent))
             {
@@ -64,7 +64,7 @@ namespace RabbitMQ.PubSub.Diagnostics
             return activity;
         }
 
-        public static void StopMessageDeserialize(Activity activity)
+        public static void StopMessageDeserialize(Activity? activity)
         {
             if (activity != null)
             {
@@ -72,7 +72,7 @@ namespace RabbitMQ.PubSub.Diagnostics
             }
         }
 
-        public static void StopMessageIn(Activity activity, MessageContext context)
+        public static void StopMessageIn(Activity? activity, MessageContext context)
         {
             if (activity != null)
             {
@@ -80,7 +80,7 @@ namespace RabbitMQ.PubSub.Diagnostics
             }
         }
 
-        public static void StopMessageOut(Activity activity, PublishOptions options)
+        public static void StopMessageOut(Activity? activity, PublishOptions options)
         {
             if (activity != null)
             {
@@ -88,12 +88,12 @@ namespace RabbitMQ.PubSub.Diagnostics
             }
         }
 
-        public static void StopMessageSerialize(Activity activity)
+        public static void StopMessageSerialize(Activity? activity)
         {
             if (activity != null)
             {
                 _diagnostic.StopActivity(activity, null);
             }
-        }       
+        }
     }
 }

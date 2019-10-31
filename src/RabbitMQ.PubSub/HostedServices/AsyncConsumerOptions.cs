@@ -7,15 +7,10 @@ namespace RabbitMQ.PubSub
     public class AsyncConsumerOptions<TObj>
     {
         public bool AutoAck { get; set; } = true;
-        public string Exchange { get; set; }
-        public List<IConsumerPipeline<TObj>> Pipelines { get; set; }
-        public string QueueName { get; set; }
-        public string[] RoutingKeys { get; set; }
-
-        public AsyncConsumerOptions()
-        {
-            Pipelines = new List<IConsumerPipeline<TObj>>();
-        }
+        public string? Exchange { get; set; }
+        public List<IConsumerPipeline<TObj>> Pipelines { get; set; } = new List<IConsumerPipeline<TObj>>();
+        public string? QueueName { get; set; }
+        public string[]? RoutingKeys { get; set; }
     }
 
     public interface IAsyncConsumerOptionsBuilder<TObj>

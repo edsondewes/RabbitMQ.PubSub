@@ -9,8 +9,8 @@ namespace RabbitMQ.PubSub
     public class PipelineManager<TObj>
     {
         private int _index;
-        private TObj _obj;
-        private MessageContext _context;
+        private TObj _obj = default!;
+        private MessageContext _context = default!;
 
         private readonly Func<Task> _next;
         private readonly Func<TObj, MessageContext, CancellationToken, Func<Task>, Task>[] _pipelines;

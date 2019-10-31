@@ -5,6 +5,6 @@ namespace RabbitMQ.PubSub
 {
     public interface IMessageConsumer : IDisposable
     {
-        ISubscription Subscribe<T>(Func<T, MessageContext, Task> callback, SubscriptionOptions options = null);
+        ISubscription Subscribe<T>(Func<T, MessageContext, Task> callback, SubscriptionOptions? options = null);
     }
 }

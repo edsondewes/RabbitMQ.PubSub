@@ -8,9 +8,9 @@ namespace RabbitMQ.PubSub
     public interface ISerializationManager
     {
         string DefaultMimeType { get; }
-        T Deserialize<T>(byte[] body, string mimeType = null);
-        byte[] Serialize<T>(T obj, string mimeType = null);
-        List<byte[]> SerializeBatch<T>(IEnumerable<T> enumerable, string mimeType = null);
+        T Deserialize<T>(byte[] body, string? mimeType = null);
+        byte[] Serialize<T>(T obj, string? mimeType = null);
+        List<byte[]> SerializeBatch<T>(IEnumerable<T> enumerable, string? mimeType = null);
     }
 
     internal class SerializationManagerImpl : ISerializationManager
@@ -29,7 +29,7 @@ namespace RabbitMQ.PubSub
 
         public string DefaultMimeType => _default.MimeType;
 
-        public T Deserialize<T>(byte[] body, string mimeType = null)
+        public T Deserialize<T>(byte[] body, string? mimeType = null)
         {
             var activity = MessageDiagnostics.StartMessageDeserialize();
 
@@ -41,7 +41,7 @@ namespace RabbitMQ.PubSub
             return obj;
         }
 
-        public byte[] Serialize<T>(T obj, string mimeType = null)
+        public byte[] Serialize<T>(T obj, string? mimeType = null)
         {
             var activity = MessageDiagnostics.StartMessageSerialize();
 
@@ -53,7 +53,7 @@ namespace RabbitMQ.PubSub
             return result;
         }
 
-        public List<byte[]> SerializeBatch<T>(IEnumerable<T> enumerable, string mimeType = null)
+        public List<byte[]> SerializeBatch<T>(IEnumerable<T> enumerable, string? mimeType = null)
         {
             var activity = MessageDiagnostics.StartMessageSerialize();
 
@@ -69,7 +69,7 @@ namespace RabbitMQ.PubSub
             return list;
         }
 
-        private ISerializer GetSerializer(string mimeType = null)
+        private ISerializer GetSerializer(string? mimeType)
         {
             if (mimeType is null)
                 return _default;

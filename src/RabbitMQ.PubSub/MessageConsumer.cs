@@ -7,20 +7,23 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.PubSub.Diagnostics;
+using RabbitMQ.PubSub.Exceptions;
 
 namespace RabbitMQ.PubSub
 {
-    public class MessageConsumer : IMessageConsumer
+    public sealed class MessageConsumer : IMessageConsumer
     {
         private readonly ConfigRabbitMQ _config;
         private readonly IConnection _connection;
         private readonly ILogger<MessageConsumer> _logger;
         private readonly ISerializationManager _serialization;
 
-        public MessageConsumer(IOptions<ConfigRabbitMQ> config,
+        public MessageConsumer(
+            IOptions<ConfigRabbitMQ> config,
             IConnectionHelper connectionFactory,
             ISerializationManager serialization,
-            ILogger<MessageConsumer> logger)
+            ILogger<MessageConsumer> logger
+            )
         {
             _config = config.Value;
             _connection = connectionFactory.CreateConnection(_config);
@@ -33,14 +36,19 @@ namespace RabbitMQ.PubSub
             _connection.Dispose();
         }
 
-        public ISubscription Subscribe<T>(Func<T, MessageContext, Task> callback, SubscriptionOptions options = null)
+        public ISubscription Subscribe<T>(Func<T, MessageContext, Task> callback, SubscriptionOptions? options = null)
         {
             var autoAck = options?.AutoAck ?? true;
             var exchange = options?.Exchange ?? _config.DefaultExchange;
 
+            if (exchange is null)
+            {
+                throw new InvalidExchangeException();
+            }
+
             var model = CreateModel();
             EnsureExchangeCreated(model, exchange, options.ExchangeType());
-            var queueName = EnsureQueueCreated(model, options?.RoutingKeys, exchange, options?.Queue);
+            var queueName = EnsureQueueCreated(model, exchange, options?.Queue, options?.RoutingKeys);
 
             var consumer = new AsyncEventingBasicConsumer(model);
             var consumerTag = model.BasicConsume(queue: queueName, autoAck: autoAck, consumer: consumer);
@@ -84,7 +92,7 @@ namespace RabbitMQ.PubSub
             model.ExchangeDeclare(name, type, durable: true, autoDelete: false);
         }
 
-        private string EnsureQueueCreated(IModel model, IEnumerable<string> routingKeys, string exchange, string queue)
+        private string EnsureQueueCreated(IModel model, string exchange, string? queue, IEnumerable<string>? routingKeys)
         {
             var args = _config.LazyQueues
                 ? new Dictionary<string, object> { { "x-queue-mode", "lazy" } }
@@ -97,7 +105,7 @@ namespace RabbitMQ.PubSub
                 exclusive: false,
                 arguments: args).QueueName;
 
-            if (routingKeys == null || !routingKeys.Any())
+            if (routingKeys is null || !routingKeys.Any())
                 routingKeys = new[] { string.Empty };
 
             foreach (var routingKey in routingKeys)

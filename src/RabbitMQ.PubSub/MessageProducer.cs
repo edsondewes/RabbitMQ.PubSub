@@ -2,10 +2,11 @@
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.PubSub.Diagnostics;
+using RabbitMQ.PubSub.Exceptions;
 
 namespace RabbitMQ.PubSub
 {
-    public class MessageProducer : IMessageProducer
+    public sealed class MessageProducer : IMessageProducer
     {
         private readonly IConnection _connection;
         private readonly ConfigRabbitMQ _config;
@@ -82,6 +83,11 @@ namespace RabbitMQ.PubSub
             properties.Headers = options?.Headers;
 
             var exchange = options?.Exchange ?? _config.DefaultExchange;
+            if (exchange is null)
+            {
+                throw new InvalidExchangeException();
+            }
+
             var routingKey = options?.RoutingKey ?? string.Empty;
 
             return new PublishContext<T>(
