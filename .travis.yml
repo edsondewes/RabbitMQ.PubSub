@@ -1,7 +1,7 @@
 language: csharp
 solution: RabbitMQ.PubSub.sln
 mono: none
-dotnet: 2.2.401
+dotnet: 3.0
 
 env:
   global:
