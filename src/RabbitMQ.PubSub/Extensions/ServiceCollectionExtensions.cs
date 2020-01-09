@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using RabbitMQ.PubSub;
 using RabbitMQ.PubSub.Serializers;
 
@@ -15,7 +14,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>The original Microsoft.Extensions.DependencyInjection.IServiceCollection.</returns>
         public static IServiceCollection AddRabbitPubSub(this IServiceCollection services)
         {
-            MessagePack.MessagePackSerializer.SetDefaultResolver(MessagePack.Resolvers.ContractlessStandardResolver.Instance);
+            MessagePack.MessagePackSerializer.DefaultOptions = MessagePack.MessagePackSerializerOptions.Standard
+                .WithResolver(MessagePack.Resolvers.ContractlessStandardResolver.Instance);
 
             services.AddSingleton<IConnectionHelper, ConnectionHelper>();
             services.AddSingleton<IMessageConsumer, MessageConsumer>();
